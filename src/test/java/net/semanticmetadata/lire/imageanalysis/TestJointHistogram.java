@@ -75,7 +75,7 @@ public class TestJointHistogram extends TestCase {
         System.out.println("result = " + result);
         System.out.println(h1[i] > 0 ? "1" : "0");
 
-        System.out.println((true ? 1 : 0) + 1);
+//        System.out.println((true ? 1 : 0) + 1);
     }
 
 }
