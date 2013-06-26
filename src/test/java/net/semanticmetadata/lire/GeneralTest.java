@@ -60,6 +60,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 /**
  * Created with IntelliJ IDEA.
@@ -77,11 +78,22 @@ public class GeneralTest extends TestCase {
     private String indexPath = "test-index";
     private String testExtensive = "./wang-1000";
     
-    @SuppressWarnings("rawtypes")
-	private Class[] featureClasses = new Class[]{
-            CEDD.class, FCTH.class, JCD.class, AutoColorCorrelogram.class, ColorLayout.class, EdgeHistogram.class,
-            Gabor.class, JpegCoefficientHistogram.class,
-            ScalableColor.class, SimpleColorHistogram.class, Tamura.class, FuzzyColorHistogram.class, PHOG.class
+	private static List<Class<? extends LireFeature>> featureClasses = new ArrayList<Class<? extends LireFeature>>();
+	
+	static {
+		featureClasses.add(CEDD.class);
+		featureClasses.add(FCTH.class);
+		featureClasses.add(JCD.class);
+		featureClasses.add(AutoColorCorrelogram.class);
+		featureClasses.add(ColorLayout.class);
+		featureClasses.add(EdgeHistogram.class);
+		featureClasses.add(Gabor.class);
+		featureClasses.add(JpegCoefficientHistogram.class);
+		featureClasses.add(ScalableColor.class);
+		featureClasses.add(SimpleColorHistogram.class);
+		featureClasses.add(Tamura.class);
+		featureClasses.add(FuzzyColorHistogram.class);
+		featureClasses.add(PHOG.class);
     };
 
     private DocumentBuilder[] builders = new DocumentBuilder[]{
@@ -285,8 +297,8 @@ public class GeneralTest extends TestCase {
         int count = 0;
         long ms = System.currentTimeMillis();
         ImageSearchHits hits = searchers[featureIndex].search(reader.document(queryDocID), reader);
-        RerankFilter rerank = new RerankFilter(featureClasses[0], DocumentBuilder.FIELD_NAME_CEDD);
-        LsaFilter lsa = new LsaFilter(featureClasses[0], DocumentBuilder.FIELD_NAME_CEDD);
+        RerankFilter rerank = new RerankFilter(featureClasses.get(0), DocumentBuilder.FIELD_NAME_CEDD);
+        LsaFilter lsa = new LsaFilter(featureClasses.get(0), DocumentBuilder.FIELD_NAME_CEDD);
         FileUtils.saveImageResultsToPng("GeneralTest_rerank_0_old", hits, reader.document(queryDocID).getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]);
         hits = rerank.filter(hits, reader.document(queryDocID));
         FileUtils.saveImageResultsToPng("GeneralTest_rerank_1_new", hits, reader.document(queryDocID).getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]);
