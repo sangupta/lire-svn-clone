@@ -65,7 +65,7 @@ import java.io.IOException;
  * @author Mathias Lux, mathias@juggle.at
  */
 public class HashingIndexor extends Indexor {
-    protected Class featureClass = PHOG.class;
+    protected Class<PHOG> featureClass = PHOG.class;
 
     public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
         HashingIndexor indexor = new HashingIndexor();

@@ -42,6 +42,7 @@ import junit.framework.TestCase;
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.DocumentBuilderFactory;
 import net.semanticmetadata.lire.imageanalysis.*;
+
 import org.apache.lucene.document.Document;
 
 import java.io.FileInputStream;
@@ -130,7 +131,7 @@ public class FastMapTest extends TestCase {
 //        String fieldName = DocumentBuilder.FIELD_NAME_CEDD;
 
         // Color histogram
-        Class descriptor = SimpleColorHistogram.class;
+        Class<SimpleColorHistogram> descriptor = SimpleColorHistogram.class;
         String fieldName = DocumentBuilder.FIELD_NAME_COLORHISTOGRAM;
 
         LinkedList<LireFeature> objs = new LinkedList<LireFeature>();

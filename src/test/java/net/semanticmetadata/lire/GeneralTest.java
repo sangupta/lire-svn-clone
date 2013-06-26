@@ -74,6 +74,7 @@ public class GeneralTest extends TestCase {
     private String testFilesPath = "./src/test/resources/images/";
     private String indexPath = "test-index";
     private String testExtensive = "./wang-1000";
+    
     private Class[] featureClasses = new Class[]{
             CEDD.class, FCTH.class, JCD.class, AutoColorCorrelogram.class, ColorLayout.class, EdgeHistogram.class,
             Gabor.class, JpegCoefficientHistogram.class,

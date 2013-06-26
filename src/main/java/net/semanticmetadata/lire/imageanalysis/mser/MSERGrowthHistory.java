@@ -50,7 +50,7 @@ import java.util.List;
  * Date: 28.06.2010
  * Time: 11:04:17
  */
-public class MSERGrowthHistory implements Comparable {
+public class MSERGrowthHistory implements Comparable<MSERGrowthHistory> {
     int index;
     int size;
     int maxGreyValue;
@@ -164,15 +164,17 @@ public class MSERGrowthHistory implements Comparable {
         return index;
     }
 
-    public int compareTo(Object o) {
-        if (maxGreyValue < ((MSERGrowthHistory) o).maxGreyValue) {
+    public int compareTo(MSERGrowthHistory object) {
+        if (maxGreyValue < object.maxGreyValue) {
             return -1;
-        } else if (maxGreyValue > ((MSERGrowthHistory) o).maxGreyValue) {
+        }
+        
+        if (maxGreyValue > object.maxGreyValue) {
             return 1;
         }
+        
         return 0;
     }
-
 
     public static void main(String[] args) {
         int[] points = new int[]{12,
