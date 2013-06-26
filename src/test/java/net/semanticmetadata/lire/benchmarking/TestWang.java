@@ -193,7 +193,8 @@ public class TestWang extends TestCase {
         System.out.println("*******************************************");
     }
 
-    private void indexFiles(ArrayList<String> images, DocumentBuilder builder, String indexPath) throws IOException {
+    @SuppressWarnings("unused")
+	private void indexFiles(ArrayList<String> images, DocumentBuilder builder, String indexPath) throws IOException {
 //        System.out.println(">> Indexing " + images.size() + " files.");
 //        DocumentBuilder builder = DocumentBuilderFactory.getExtensiveDocumentBuilder();
 //        DocumentBuilder builder = DocumentBuilderFactory.getFastDocumentBuilder();

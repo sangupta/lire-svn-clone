@@ -343,7 +343,8 @@ public class FileUtils {
      * @return the file type by enumeration FileTypes.
      * @throws IOException
      */
-    private static FileTypes identifyFileType(File file) throws IOException {
+    @SuppressWarnings("unused")
+	private static FileTypes identifyFileType(File file) throws IOException {
         byte[] buffer = new byte[8];
         
         InputStream in = null;

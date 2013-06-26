@@ -115,7 +115,8 @@ public class FilterTest extends TestCase {
         FileUtils.saveImageResultsToHtml("filtertest", hits, document.getField(DocumentBuilder.FIELD_NAME_IDENTIFIER).stringValue());
     }
 
-    private Document indexFiles() throws IOException {
+    @SuppressWarnings("unused")
+	private Document indexFiles() throws IOException {
         System.out.println("---< indexing >-------------------------");
         int count = 0;
         DocumentBuilder builder = getDocumentBuilder();

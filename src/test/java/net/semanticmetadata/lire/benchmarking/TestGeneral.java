@@ -235,7 +235,8 @@ public class TestGeneral extends TestCase {
       }
   }  */
 
-    private ImageSearchHits rerank(ImageSearchHits hits, Document query, Class<? extends LireFeature> descriptorClass, String fieldName) throws IllegalAccessException, InstantiationException {
+    @SuppressWarnings("unused")
+	private ImageSearchHits rerank(ImageSearchHits hits, Document query, Class<? extends LireFeature> descriptorClass, String fieldName) throws IllegalAccessException, InstantiationException {
         ArrayList<SimpleResult> results = new ArrayList<SimpleResult>(hits.length());
         LireFeature qf = getFeature(descriptorClass, query.getValues(fieldName)[0]);
         float maxDistance = 0f;
@@ -259,7 +260,8 @@ public class TestGeneral extends TestCase {
     }
 
 
-    private void saveToHtml(String prefix, ImageSearchHits hits, String queryImage) throws IOException {
+    @SuppressWarnings("unused")
+	private void saveToHtml(String prefix, ImageSearchHits hits, String queryImage) throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter("results - " + prefix + ".html"));
         bw.write("<html>\n" +
                 "<head><title>Search Results</title></head>\n" +
