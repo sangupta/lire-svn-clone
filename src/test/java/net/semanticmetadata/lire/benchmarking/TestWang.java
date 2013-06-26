@@ -182,9 +182,9 @@ public class TestWang extends TestCase {
     }
 
     public void doParams(int numDocs, int numClusters) throws IOException {
-        SiftFeatureHistogramBuilder sh1 = new SiftFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), numDocs, numClusters);
+        SiftFeatureHistogramBuilder sh1 = new SiftFeatureHistogramBuilder(DirectoryReader.open(FSDirectory.open(new File(indexPath))), numDocs, numClusters);
         sh1.index();
-        SurfFeatureHistogramBuilder sh = new SurfFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), numDocs, numClusters);
+        SurfFeatureHistogramBuilder sh = new SurfFeatureHistogramBuilder(DirectoryReader.open(FSDirectory.open(new File(indexPath))), numDocs, numClusters);
         sh.index();
         System.out.println("*******************************************");
         System.out.println("SiftFeatureHistogramBuilder sh1 = new SiftFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), " + numDocs + ", " + numClusters + ");");
@@ -344,7 +344,7 @@ public class TestWang extends TestCase {
     public void testParallelMAP() throws IOException {
 
         int maxHits = 1000;
-        IndexReader reader = IndexReader.open(FSDirectory.open(new File(indexPath)));
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexPath)));
         ParallelImageSearcher searcher;
         searcher = new ParallelImageSearcher(maxHits, CEDD.class, DocumentBuilder.FIELD_NAME_CEDD);
         Pattern p = Pattern.compile("([0-9]+).jpg");
@@ -399,7 +399,7 @@ public class TestWang extends TestCase {
     public void tttestMAPLocalFeatureHistogram() throws IOException {
         int maxSearches = 200;
         int maxHits = 100;
-        IndexReader reader = IndexReader.open(FSDirectory.open(new File(indexPath)));
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexPath)));
         IndexSearcher is = new IndexSearcher(reader);
         ImageSearcher searcher;
 //        searcher = new SiftLocalFeatureHistogramImageSearcher(maxHits);
@@ -472,7 +472,7 @@ public class TestWang extends TestCase {
 
     public void tttestGetDistribution() throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter("data.csv"));
-        IndexReader reader = IndexReader.open(FSDirectory.open(new File(indexPath)));
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexPath)));
         // get the first document:
 //        if (!IndexReader.indexExists(reader.directory()))
 //            throw new FileNotFoundException("No index found at this specific location.");

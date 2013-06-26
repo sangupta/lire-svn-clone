@@ -49,6 +49,8 @@ import net.semanticmetadata.lire.impl.SiftDocumentBuilder;
 import net.semanticmetadata.lire.impl.SurfDocumentBuilder;
 import net.semanticmetadata.lire.utils.FileUtils;
 import net.semanticmetadata.lire.utils.LuceneUtils;
+
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.FSDirectory;
@@ -180,7 +182,7 @@ public class TestLocalFeatureHistogram extends TestCase {
     public void testCreateLocalFeatureHistogram() throws IOException {
 //        testSiftIndexing();
 
-        SiftFeatureHistogramBuilder sh = new SiftFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File("sift-idx"))), 2000);
+        SiftFeatureHistogramBuilder sh = new SiftFeatureHistogramBuilder(DirectoryReader.open(FSDirectory.open(new File("sift-idx"))), 2000);
         sh.index();
         testFindimages();
     }
@@ -188,7 +190,7 @@ public class TestLocalFeatureHistogram extends TestCase {
     public void testCreateSurfFeatureHistogram() throws IOException {
 //        testSiftIndexing();
 
-        SurfFeatureHistogramBuilder sh = new SurfFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File("surf-idx"))), 500, 1000);
+        SurfFeatureHistogramBuilder sh = new SurfFeatureHistogramBuilder(DirectoryReader.open(FSDirectory.open(new File("surf-idx"))), 500, 1000);
         sh.index();
 //        testFindimages();
     }

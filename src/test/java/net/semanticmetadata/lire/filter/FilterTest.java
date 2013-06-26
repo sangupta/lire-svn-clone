@@ -47,6 +47,7 @@ import net.semanticmetadata.lire.impl.ChainedDocumentBuilder;
 import net.semanticmetadata.lire.utils.FileUtils;
 import net.semanticmetadata.lire.utils.LuceneUtils;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.FSDirectory;
@@ -83,7 +84,7 @@ public class FilterTest extends TestCase {
         // indexFiles();
         // search
         System.out.println("---< searching >-------------------------");
-        IndexReader reader = IndexReader.open(FSDirectory.open(new File(indexPath)));
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexPath)));
         Document document = reader.document(0);
         ImageSearcher searcher = ImageSearcherFactory.createCEDDImageSearcher(100);
         ImageSearchHits hits = searcher.search(document, reader);
@@ -101,7 +102,7 @@ public class FilterTest extends TestCase {
 //        indexFiles();
         // search
         System.out.println("---< searching >-------------------------");
-        IndexReader reader = IndexReader.open(FSDirectory.open(new File(indexPath)));
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexPath)));
         Document document = reader.document(0);
         ImageSearcher searcher = ImageSearcherFactory.createCEDDImageSearcher(100);
         ImageSearchHits hits = searcher.search(document, reader);
