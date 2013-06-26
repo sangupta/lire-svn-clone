@@ -49,6 +49,10 @@ import net.semanticmetadata.lire.utils.FileUtils;
 import net.semanticmetadata.lire.utils.LuceneUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
+import org.apache.lucene.document.FieldType;
+import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
@@ -92,8 +96,12 @@ public class LocalitySensitiveHashingTest extends TestCase {
             CEDD cedd = new CEDD();
             cedd.extract(ImageIO.read(new FileInputStream(identifier)));
             Document doc = new Document();
-            doc.add(new Field(DocumentBuilder.FIELD_NAME_CEDD, cedd.getByteArrayRepresentation()));
-            doc.add(new Field(DocumentBuilder.FIELD_NAME_IDENTIFIER, identifier, Field.Store.YES, Field.Index.NOT_ANALYZED));
+            doc.add(new StoredField(DocumentBuilder.FIELD_NAME_CEDD, cedd.getByteArrayRepresentation()));
+            
+            FieldType fieldType = new FieldType(StringField.TYPE_STORED);
+            fieldType.setOmitNorms(false);
+            doc.add(new Field(DocumentBuilder.FIELD_NAME_IDENTIFIER, identifier, fieldType));
+            
             int[] hashes = LocalitySensitiveHashing.generateHashes(cedd.getDoubleHistogram());
             StringBuilder hash = new StringBuilder(512);
             for (int i = 0; i < hashes.length; i++) {
@@ -101,7 +109,7 @@ public class LocalitySensitiveHashingTest extends TestCase {
                 hash.append(' ');
             }
 //            System.out.println("hash = " + hash);
-            doc.add(new Field("hash", hash.toString(), Field.Store.YES, Field.Index.ANALYZED));
+            doc.add(new Field("hash", hash.toString(), TextField.TYPE_STORED));
             iw.addDocument(doc);
             count++;
 //            if (count % 100 == 0) System.out.println(count + " files indexed.");
