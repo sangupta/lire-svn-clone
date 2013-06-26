@@ -125,28 +125,36 @@ public class TestUCID extends TestCase {
         };
 
         // Getting the queries:
-        BufferedReader br = new BufferedReader(new FileReader(groundTruth));
-        String line;
-        queries = new HashMap<String, List<String>>(260);
-        String currentQuery = null;
-        LinkedList<String> results = null;
-        while ((line = br.readLine()) != null) {
-            line = line.trim();
-            if (line.startsWith("#") || line.length() < 4)
-                continue;
-            else {
-                if (line.endsWith(":")) {
-                    if (currentQuery != null) {
-                        queries.put(currentQuery, results);
-                    }
-                    currentQuery = line.replace(':', ' ').trim();
-                    results = new LinkedList<String>();
-                } else {
-                    results.add(line);
-                }
-            }
+        BufferedReader br = null;
+        
+        try {
+			br = new BufferedReader(new FileReader(groundTruth));
+	        String line;
+	        queries = new HashMap<String, List<String>>(260);
+	        String currentQuery = null;
+	        LinkedList<String> results = null;
+	        while ((line = br.readLine()) != null) {
+	            line = line.trim();
+	            if (line.startsWith("#") || line.length() < 4)
+	                continue;
+	            else {
+	                if (line.endsWith(":")) {
+	                    if (currentQuery != null) {
+	                        queries.put(currentQuery, results);
+	                    }
+	                    currentQuery = line.replace(':', ' ').trim();
+	                    results = new LinkedList<String>();
+	                } else {
+	                    results.add(line);
+	                }
+	            }
+	        }
+	        queries.put(currentQuery, results);
+        } finally {
+        	if(br != null) {
+        		br.close();
+        	}
         }
-        queries.put(currentQuery, results);
     }
 
     public void testMAP() throws IOException {

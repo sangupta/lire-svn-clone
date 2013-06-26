@@ -95,14 +95,21 @@ public class Indexor {
             } else if (arg.startsWith("-c")) {
                 // list of input files within a file.
                 if ((i + 1) < args.length) {
-                    BufferedReader br = new BufferedReader(new FileReader(new File(args[i + 1])));
-                    String file;
-                    while ((file = br.readLine()) != null) {
-                        if (file.trim().length() > 2) {
-                            File f = new File(file);
-                            if (f.exists()) indexor.addInputFile(f);
-                            else System.err.println("Did not find file " + f.getCanonicalPath());
-                        }
+                    BufferedReader br = null;
+                    try {
+						br = new BufferedReader(new FileReader(new File(args[i + 1])));
+	                    String file;
+	                    while ((file = br.readLine()) != null) {
+	                        if (file.trim().length() > 2) {
+	                            File f = new File(file);
+	                            if (f.exists()) indexor.addInputFile(f);
+	                            else System.err.println("Did not find file " + f.getCanonicalPath());
+	                        }
+	                    }
+                    } finally {
+                    	if(br != null) {
+                    		br.close();
+                    	}
                     }
                 } else printHelp();
             }

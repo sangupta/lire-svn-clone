@@ -252,10 +252,23 @@ public class ParallelIndexer implements Runnable {
                 files = FileUtils.getAllImages(new File(imageDirectory), true);
             } else {
                 files = new LinkedList<String>();
-                BufferedReader br = new BufferedReader(new FileReader(imageList));
-                String line = null;
-                while ((line = br.readLine()) != null) {
-                    if (line.trim().length() > 3) files.add(line.trim());
+                
+                BufferedReader br = null;
+                
+                try {
+					br = new BufferedReader(new FileReader(imageList));
+	                String line = null;
+	                while ((line = br.readLine()) != null) {
+	                    if (line.trim().length() > 3) files.add(line.trim());
+	                }
+                } finally {
+                	if(br != null) {
+                		try {
+                			br.close();
+                		} catch(IOException e) {
+                			e.printStackTrace();
+                		}
+                	}
                 }
             }
             numImages = files.size();

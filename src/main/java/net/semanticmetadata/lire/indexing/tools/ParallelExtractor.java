@@ -41,16 +41,29 @@
 
 package net.semanticmetadata.lire.indexing.tools;
 
+import java.awt.image.BufferedImage;
+import java.io.BufferedOutputStream;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Stack;
+import java.util.zip.GZIPOutputStream;
+
+import javax.imageio.ImageIO;
+
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
 import net.semanticmetadata.lire.indexing.parallel.WorkItem;
 import net.semanticmetadata.lire.utils.SerializationUtils;
-
-import javax.imageio.ImageIO;
-import java.awt.image.BufferedImage;
-import java.io.*;
-import java.util.*;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * The Extractor is a configurable class that extracts multiple features from multiple images
@@ -332,9 +345,13 @@ public class ParallelExtractor implements Runnable {
     class Producer implements Runnable {
         public void run() {
             int tmpSize = 0;
+            
+            BufferedReader br = null;
+            BufferedOutputStream dos = null;
+            
             try {
-                BufferedReader br = new BufferedReader(new FileReader(fileList));
-                BufferedOutputStream dos = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
+				br = new BufferedReader(new FileReader(fileList));
+				dos = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
                 String file = null;
                 File next = null;
                 while ((file = br.readLine()) != null) {
@@ -361,7 +378,24 @@ public class ParallelExtractor implements Runnable {
 
             } catch (IOException e) {
                 e.printStackTrace();
+            } finally {
+            	if(br != null) {
+            		try {
+						br.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+            	}
+            	
+            	if(dos != null) {
+            		try {
+						dos.close();
+					} catch (IOException e) {
+						e.printStackTrace();
+					}
+            	}
             }
+            
             synchronized (images) {
                 ended = true;
                 images.notifyAll();

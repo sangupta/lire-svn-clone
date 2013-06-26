@@ -260,8 +260,11 @@ public class Extractor implements Runnable {
         // do it ...
         byte[] myBuffer = new byte[1024*1024*10];
         int bufferCount = 0;
+        
+        BufferedReader br = null;
+        
         try {
-            BufferedReader br = new BufferedReader(new FileReader(fileList));
+			br = new BufferedReader(new FileReader(fileList));
             BufferedOutputStream dos = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
             String file = null;
             String outFilePath = outFile.getCanonicalPath();
@@ -311,6 +314,14 @@ public class Extractor implements Runnable {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+        	if(br != null) {
+        		try {
+					br.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+        	}
         }
     }
 }

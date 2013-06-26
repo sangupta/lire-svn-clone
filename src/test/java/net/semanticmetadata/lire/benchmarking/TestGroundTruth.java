@@ -185,28 +185,37 @@ public class TestGroundTruth extends TestCase {
      * @throws IOException
      */
     private double getPrecision(ImageSearcher is, IndexReader reader) throws IOException {
-        BufferedReader br = new BufferedReader(new FileReader(truth));
-        String line = null;
-        StringBuilder sb = new StringBuilder(128);
-        double count = 0, sum = 0;
-        while ((line = br.readLine()) != null) {
-            BufferedImage bimg = ImageIO.read(new File(line));
-            ImageSearchHits hits = is.search(bimg, reader);
-            saveImageResultsToPng("result", hits, line);
-            for (int i = 0; i < Math.min(20, hits.length()); i++) {
-                Document d = hits.doc(i);
-                String fileName = d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0];
-                if (fileName.contains("swoosh")) {
-                    sum += 1;
-                    sb.append('*');
-                } else sb.append('.');
-            }
-            sb.append(" - " + line);
-//            System.out.println(sb);
-            sb.delete(0, sb.length());
-            count++;
+        BufferedReader br = null;
+        
+        try {
+			br = new BufferedReader(new FileReader(truth));
+	        String line = null;
+	        StringBuilder sb = new StringBuilder(128);
+	        double count = 0, sum = 0;
+	        while ((line = br.readLine()) != null) {
+	            BufferedImage bimg = ImageIO.read(new File(line));
+	            ImageSearchHits hits = is.search(bimg, reader);
+	            saveImageResultsToPng("result", hits, line);
+	            for (int i = 0; i < Math.min(20, hits.length()); i++) {
+	                Document d = hits.doc(i);
+	                String fileName = d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0];
+	                if (fileName.contains("swoosh")) {
+	                    sum += 1;
+	                    sb.append('*');
+	                } else sb.append('.');
+	            }
+	            sb.append(" - " + line);
+	//            System.out.println(sb);
+	            sb.delete(0, sb.length());
+	            count++;
+	        }
+	        
+	        return sum / (20d * count);
+        } finally {
+        	if(br != null) {
+        		br.close();
+        	}
         }
-        return sum / (20d * count);
     }
 
     public static void saveImageResultsToPng(String prefix, ImageSearchHits hits, String queryImage) throws IOException {

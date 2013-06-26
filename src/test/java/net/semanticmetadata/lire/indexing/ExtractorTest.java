@@ -51,6 +51,7 @@ import javax.imageio.ImageIO;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.util.zip.GZIPInputStream;
 
 /**
@@ -72,8 +73,11 @@ public class ExtractorTest extends TestCase {
         int tmp, tmpFeature;
         byte[] temp = new byte[2064];
         File inputFile = new File("out.data");
+        
+        BufferedInputStream in = null;
+        
         try {
-            BufferedInputStream in = new BufferedInputStream(new GZIPInputStream(new FileInputStream("out.data")));
+			in = new BufferedInputStream(new GZIPInputStream(new FileInputStream("out.data")));
             // read file hashFunctionsFileName length:
             while (in.read(tempInt, 0, 4) > 0) {
                 tmp = SerializationUtils.toInt(tempInt);
@@ -101,6 +105,14 @@ public class ExtractorTest extends TestCase {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
+        } finally {
+        	if(in != null) {
+        		try {
+					in.close();
+				} catch (IOException e1) {
+					e1.printStackTrace();
+				}
+        	}
         }
 
     }
