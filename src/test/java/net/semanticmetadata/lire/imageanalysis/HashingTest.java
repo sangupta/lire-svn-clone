@@ -54,6 +54,8 @@ import java.util.LinkedList;
  * Date: 21.02.12
  * Time: 16:32
  * To change this template use File | Settings | File Templates.
+ * 
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class HashingTest extends TestCase {
     private float[][] hashPlanes;

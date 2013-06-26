@@ -60,6 +60,7 @@ import java.util.zip.ZipOutputStream;
  * <br>Time: 09:44:49
  *
  * @author Mathias Lux, mathias@juggle.at
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class FileUtils {
     enum FileTypes {JPG, GIF, TIF, PNG, PDF, UNKNOWN};

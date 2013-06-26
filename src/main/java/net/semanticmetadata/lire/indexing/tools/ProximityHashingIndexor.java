@@ -62,6 +62,8 @@ import java.util.zip.GZIPInputStream;
  * @author Mathias Lux, mathias@juggle.at
  *         Date: 08.03.13
  *         Time: 14:28
+ *         
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class ProximityHashingIndexor {
     protected LinkedList<File> inputFiles = new LinkedList<File>();

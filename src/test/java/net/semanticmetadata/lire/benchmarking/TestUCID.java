@@ -74,6 +74,8 @@ import java.util.*;
  * User: mlux
  * Date: 14.05.13
  * Time: 10:56
+ * 
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class TestUCID extends TestCase {
     private String indexPath = "ucid-index";

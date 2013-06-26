@@ -73,6 +73,7 @@ import java.util.zip.GZIPOutputStream;
  * Note that the outfile has to be in a folder parent to all images!
  *
  * @author Mathias Lux, mathias@juggle.at, 08.03.13
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class Extractor implements Runnable {
     public static final String[] features = new String[]{

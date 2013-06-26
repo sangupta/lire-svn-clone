@@ -66,6 +66,8 @@ import java.util.Iterator;
  * User: mlux
  * Date: 29.11.12
  * Time: 13:53
+ * 
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class GeneralTest extends TestCase {
     private String[] testFiles = new String[]{

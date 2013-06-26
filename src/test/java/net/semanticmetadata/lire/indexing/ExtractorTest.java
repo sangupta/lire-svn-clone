@@ -59,6 +59,8 @@ import java.util.zip.GZIPInputStream;
  * User: mlux
  * Date: 12.03.13
  * Time: 13:21
+ * 
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class ExtractorTest extends TestCase {
     public void testExtraction() {

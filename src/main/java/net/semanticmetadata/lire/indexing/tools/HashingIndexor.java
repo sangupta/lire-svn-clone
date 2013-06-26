@@ -63,6 +63,7 @@ import java.io.IOException;
  * Created: 21.03.13 10:03
  *
  * @author Mathias Lux, mathias@juggle.at
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class HashingIndexor extends Indexor {
     protected Class<PHOG> featureClass = PHOG.class;

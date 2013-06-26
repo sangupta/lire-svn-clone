@@ -77,8 +77,8 @@ import java.util.LinkedList;
  * This file is part of LIRE, a Java library for content based image retrieval.
  *
  * @author Mathias Lux, mathias@juggle.at, 24.04.13
+ * @author sangupta, sandy.pec@gmail.com
  */
-
 public class TestGroundTruth extends TestCase {
     public String indexPath = "test-idx-large-hashed";
     private File fileList;

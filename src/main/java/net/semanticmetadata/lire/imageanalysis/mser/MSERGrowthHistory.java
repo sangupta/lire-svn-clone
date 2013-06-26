@@ -49,6 +49,8 @@ import java.util.List;
  * User: Shotty
  * Date: 28.06.2010
  * Time: 11:04:17
+ * 
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class MSERGrowthHistory implements Comparable<MSERGrowthHistory> {
     int index;

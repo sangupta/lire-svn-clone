@@ -72,6 +72,7 @@ import java.util.Stack;
  * threads extract the features from the given files.
  *
  * @author Mathias Lux, mathias@juggle.at, 15.04.13
+ * @author sangupta, sandy.pec@gmail.com
  */
 
 public class ParallelIndexer implements Runnable {

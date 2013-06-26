@@ -59,6 +59,7 @@ import java.util.logging.Logger;
  * Time: 14:32:15
  *
  * @author Mathias Lux, mathias@juggle.at
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class GenericDocumentBuilder extends AbstractDocumentBuilder {
     enum HashingMode {BitSampling, LSH}

@@ -55,6 +55,8 @@ import java.util.LinkedList;
  * User: Mathias Lux
  * Date: 21.04.2008
  * Time: 11:14:03
+ * 
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class FastMapTest extends TestCase {
     private String[] testFiles = new String[]{"img01.JPG", "img02.JPG", "img03.JPG", "img04.JPG", "img05.JPG",
