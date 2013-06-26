@@ -34,3 +34,15 @@ target/*
 
 # Project specific
 .settings/*
+testindextest/*
+index-large-new/*
+*.obj
+duplicate__*
+bovw-test/*
+index-*/*
+test-*/*
+mserIndex/*
+out.png
+results-*/*
+textindextest/*
+wang-index-*/*
