@@ -477,7 +477,7 @@ public class EdgeHistogramImplementation {
 
 
     public int[] setEdgeHistogram() {
-        int Edge_HistogramElement[] = new int[80];
+//        int Edge_HistogramElement[] = new int[80];
         double iQuantValue = 0;
         double value[] = Local_Edge_Histogram;
 

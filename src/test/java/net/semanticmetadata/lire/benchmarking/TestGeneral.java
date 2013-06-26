@@ -82,7 +82,11 @@ public class TestGeneral extends TestCase {
     private String queryImage;
 
     private static boolean cutImages = false;
+    
+    @SuppressWarnings("unused")
     private double[][] mdata = null;
+    
+    @SuppressWarnings("unused")
     private ArrayList<Document> index;
 
     protected void setUp() {
@@ -200,7 +204,7 @@ public class TestGeneral extends TestCase {
             queryImage = testIterator.next();
             Document query;
             if (cutImages) {
-                BufferedImage bimg = ImageUtils.cropImage(ImageIO.read(new FileInputStream(queryImage)), 0, 0, 200, 69);
+//                BufferedImage bimg = ImageUtils.cropImage(ImageIO.read(new FileInputStream(queryImage)), 0, 0, 200, 69);
                 query = builder.createDocument(new FileInputStream(queryImage), queryImage);
             } else
                 query = builder.createDocument(new FileInputStream(queryImage), queryImage);

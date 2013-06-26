@@ -224,7 +224,8 @@ public class ProximityHashingIndexor {
     private void readFile(IndexWriter indexWriter, File inputFile) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
         BufferedInputStream in = new BufferedInputStream(new GZIPInputStream(new FileInputStream(inputFile)));
         byte[] tempInt = new byte[4];
-        int tmp, tmpFeature, count = 0;
+        int tmp, tmpFeature;
+//        int count = 0;
         byte[] temp = new byte[100 * 1024];
         // read file hashFunctionsFileName length:
         while (in.read(tempInt, 0, 4) > 0) {

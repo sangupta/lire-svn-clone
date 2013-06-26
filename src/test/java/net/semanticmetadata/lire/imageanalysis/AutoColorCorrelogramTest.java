@@ -133,7 +133,6 @@ public class AutoColorCorrelogramTest extends TestCase {
     }
 
     public void testEquality() throws IOException {
-        long ms, sum = 0;
         for (int i = 0; i < sampleQueries.length; i++) {
             int id = sampleQueries[i];
             System.out.println("id = " + id + ": ");
@@ -163,7 +162,7 @@ public class AutoColorCorrelogramTest extends TestCase {
 
         System.out.println("Calculating distance for " + testFiles[5]);
         for (int i = 0; i < acc.length; i++) {
-            AutoColorCorrelogram autoColorCorrelogram = acc[i];
+//            AutoColorCorrelogram autoColorCorrelogram = acc[i];
             float distance = acc[i].getDistance(acc[5]);
             System.out.println(testFiles[i] + " distance = " + distance);
         }

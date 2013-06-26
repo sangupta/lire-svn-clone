@@ -191,8 +191,8 @@ public class TRModel2D extends Model {
             Collection<PointMatch> matches,
             float scale,
             float[] center) {
-        double xd = 0.0;
-        double yd = 0.0;
+//        double xd = 0.0;
+//        double yd = 0.0;
         double rd = 0.0;
 
         int num_matches = matches.size();
@@ -201,10 +201,10 @@ public class TRModel2D extends Model {
                 float[] m_p1 = m.getP1().getW();
                 float[] m_p2 = m.getP2().getW();
 
-                xd += Math.abs(m_p1[0] - m_p2[0]);
-                ;
-                yd += Math.abs(m_p1[1] - m_p2[1]);
-                ;
+//                xd += Math.abs(m_p1[0] - m_p2[0]);
+
+//                yd += Math.abs(m_p1[1] - m_p2[1]);
+
 
                 // shift relative to the center
                 float x1 = m_p1[0] - center[0];
@@ -226,8 +226,8 @@ public class TRModel2D extends Model {
 
                 rd += Math.abs(Math.atan2(sin, cos));
             }
-            xd /= matches.size();
-            yd /= matches.size();
+//            xd /= matches.size();
+//            yd /= matches.size();
             rd /= matches.size();
 
             //System.out.println( rd );

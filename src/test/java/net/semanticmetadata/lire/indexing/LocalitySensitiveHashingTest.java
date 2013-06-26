@@ -90,8 +90,8 @@ public class LocalitySensitiveHashingTest extends TestCase {
 //        System.out.println("-< Indexing " + images.size() + " files >--------------");
 
         IndexWriter iw = LuceneUtils.createIndexWriter(indexPath, true, LuceneUtils.AnalyzerType.WhitespaceAnalyzer);
-        int count = 0;
-        long time = System.currentTimeMillis();
+//        int count = 0;
+//        long time = System.currentTimeMillis();
         for (String identifier : images) {
             CEDD cedd = new CEDD();
             cedd.extract(ImageIO.read(new FileInputStream(identifier)));
@@ -111,11 +111,11 @@ public class LocalitySensitiveHashingTest extends TestCase {
 //            System.out.println("hash = " + hash);
             doc.add(new Field("hash", hash.toString(), TextField.TYPE_STORED));
             iw.addDocument(doc);
-            count++;
+//            count++;
 //            if (count % 100 == 0) System.out.println(count + " files indexed.");
         }
-        long timeTaken = (System.currentTimeMillis() - time);
-        float sec = ((float) timeTaken) / 1000f;
+//        long timeTaken = (System.currentTimeMillis() - time);
+//        float sec = ((float) timeTaken) / 1000f;
 
 //        System.out.println(sec + " seconds taken, " + (timeTaken / count) + " ms per image.");
         iw.close();

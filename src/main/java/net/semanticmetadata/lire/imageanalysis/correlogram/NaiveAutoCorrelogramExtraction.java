@@ -61,6 +61,8 @@ public class NaiveAutoCorrelogramExtraction implements IAutoCorrelogramFeatureEx
      * @return float[][] the auto-correlogram A[color][distance]
      */
     public float[][] extract(int maxFeatureValue, int[] distanceSet, int[][] img) {
+    	
+    	@SuppressWarnings("unused")
         long totalComplexity = 0;
 
         int[] histogram = new int[maxFeatureValue];

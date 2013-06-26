@@ -84,7 +84,9 @@ public class TestUCID extends TestCase {
     private String testExtensive = "E:\\ucid.v2\\png";
     private final String groundTruth = "E:\\ucid.v2\\ucid.v2.groundtruth.txt";
 
+    @SuppressWarnings("unused")
     private ChainedDocumentBuilder builder;
+    
     private HashMap<String, List<String>> queries;
     ParallelIndexer parallelIndexer;
 
@@ -294,6 +296,8 @@ public class TestUCID extends TestCase {
                 queryCount += 1d;
                 // ok, we've got a query here for a document ...
                 Document queryDoc = reader.document(i);
+                
+                @SuppressWarnings("unused")
                 ImageSearchHits hits = searcher.search(queryDoc, reader);
             }
         }

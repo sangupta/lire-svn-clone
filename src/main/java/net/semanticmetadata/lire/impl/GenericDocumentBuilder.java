@@ -130,7 +130,7 @@ public class GenericDocumentBuilder extends AbstractDocumentBuilder {
         Field[] result;
         if (hashingEnabled) result = new Field[2];
         else result = new Field[1];
-        String featureString = "";
+//        String featureString = "";
         assert (image != null);
         BufferedImage bimg = image;
         // Scaling image is especially with the correlogram features very important!
@@ -138,7 +138,7 @@ public class GenericDocumentBuilder extends AbstractDocumentBuilder {
         if (Math.max(image.getHeight(), image.getWidth()) > MAX_IMAGE_DIMENSION) {
             bimg = ImageUtils.scaleImage(image, MAX_IMAGE_DIMENSION);
         }
-        Document doc = null;
+//        Document doc = null;
         try {
             logger.finer("Starting extraction from image [" + descriptorClass.getName() + "].");
             LireFeature lireFeature = null;

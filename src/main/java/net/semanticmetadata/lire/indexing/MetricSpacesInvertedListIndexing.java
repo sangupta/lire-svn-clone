@@ -214,7 +214,7 @@ public class MetricSpacesInvertedListIndexing {
     public void updateIndex(String indexPath) throws IOException {
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(indexPath)));
         int numDocs = reader.numDocs();
-        boolean hasDeletions = reader.hasDeletions();
+//        boolean hasDeletions = reader.hasDeletions();
         int countUpdated = 0;
 
         IndexReader readerRo = DirectoryReader.open(FSDirectory.open(new File(indexPath + "-ro")));
@@ -380,7 +380,8 @@ public class MetricSpacesInvertedListIndexing {
     // ** Inner class ...
     // ******************************************************************************
 
-    private static class ScoreDocComparator implements Comparator<ScoreDoc> {
+    @SuppressWarnings("unused")
+	private static class ScoreDocComparator implements Comparator<ScoreDoc> {
         public int compare(ScoreDoc o1, ScoreDoc o2) {
             return (int) Math.signum(o2.score - o1.score);
         }

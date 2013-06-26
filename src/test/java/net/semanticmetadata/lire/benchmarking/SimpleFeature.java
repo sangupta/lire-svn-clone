@@ -75,7 +75,7 @@ public class SimpleFeature implements LireFeature {
 
     @Override
     public float getDistance(LireFeature feature) {
-        double k1 = 1.2, b = 0.75;
+//        double k1 = 1.2, b = 0.75;
         double[] hist1 = new double[hist.length], hist2 = new double[hist.length];
         System.arraycopy(hist, 0, hist1, 0, hist.length);
         System.arraycopy(((SimpleFeature) feature).hist, 0, hist2, 0, hist.length);

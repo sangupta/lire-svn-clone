@@ -202,7 +202,7 @@ public abstract class LocalFeatureHistogramBuilder {
         //  create & store histograms:
         System.out.println("Creating histograms ...");
         time = System.currentTimeMillis();
-        int[] tmpHist = new int[numClusters];
+//        int[] tmpHist = new int[numClusters];
         IndexWriter iw = LuceneUtils.createIndexWriter(((DirectoryReader) reader).directory(), true, LuceneUtils.AnalyzerType.WhitespaceAnalyzer, 256d);
         if (pm != null) { // set to 50 of 100 after clustering.
             pm.setProgress(50);

@@ -56,7 +56,7 @@ public class PolygonUtils {
      */
     public static double signedPolygonArea(Point2D.Double[] polygon) {
         int N = polygon.length;
-        Polygon P;
+//        Polygon P;
         int i, j;
         double area = 0;
 

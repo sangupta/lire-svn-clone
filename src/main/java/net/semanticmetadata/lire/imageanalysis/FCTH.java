@@ -285,7 +285,7 @@ public class FCTH implements LireFeature {
 
         int yOffset = inputMatrix[0].length / 2 / level;
 
-        int currentPixel = 0;
+//        int currentPixel = 0;
 
         //double size = inputMatrix.length * inputMatrix[0].length;
 
@@ -298,7 +298,7 @@ public class FCTH implements LireFeature {
 
                 if ((y < inputMatrix[0].length / 2 / level) && (x < inputMatrix.length / 2 / level)) {
 
-                    currentPixel++;
+//                    currentPixel++;
 
                     resultMatrix[x][y] = (inputMatrix[2 * x][2 * y] + inputMatrix[2 * x + 1][2 * y] + inputMatrix[2 * x][2 * y + 1] + inputMatrix[2 * x + 1][2 * y + 1]) / 4;
 

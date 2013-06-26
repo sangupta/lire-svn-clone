@@ -96,7 +96,7 @@ public class CannyEdgeDetector {
         BufferedImage gray;
         double[][] gx, gy;
         double[][] gd, gm;
-        int[][] gdRounded;
+//        int[][] gdRounded;
 
         // doing canny edge detection first:
         // filter images:

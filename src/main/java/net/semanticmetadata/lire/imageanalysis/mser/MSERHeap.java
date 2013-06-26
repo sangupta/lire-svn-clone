@@ -55,7 +55,8 @@ public class MSERHeap {
     Stack<BoundaryPixel>[] stacks;
 
     // normally MSER has 256 levels (0-255)
-    public MSERHeap(int levels) {
+    @SuppressWarnings("unchecked")
+	public MSERHeap(int levels) {
         bitmask = new boolean[levels];
         stacks = new Stack[levels];
         for (int i = 0; i < levels; i++) {

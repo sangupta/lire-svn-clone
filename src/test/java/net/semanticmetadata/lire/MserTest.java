@@ -120,7 +120,7 @@ public class MserTest extends TestCase {
     }
 
     public void testFaulty() throws IOException {
-        MSERDocumentBuilder builder = new MSERDocumentBuilder();
+//        MSERDocumentBuilder builder = new MSERDocumentBuilder();
 //        String file = "C:\\Temp\\testImagelogos\\xml\\00\\00\\72330000.gif";
         String file = "C:\\Temp\\test.png";
         BufferedImage image = ImageUtils.createWorkingCopy(ImageIO.read(new FileInputStream(file)));

@@ -58,7 +58,10 @@ import java.util.LinkedList;
  * @author sangupta, sandy.pec@gmail.com
  */
 public class HashingTest extends TestCase {
+	
+	@SuppressWarnings("unused")
     private float[][] hashPlanes;
+	
     int bits = 16, dimensions = 256;
     private int numFunctionBundles = 10;
 
@@ -139,7 +142,7 @@ public class HashingTest extends TestCase {
         oos.writeInt(numFunctionBundles);
         for (int c = 0; c < numFunctionBundles; c++) {
             for (int i = 0; i < bits; i++) {
-                float[] hashPlane = hashPlanes[i];
+//                float[] hashPlane = hashPlanes[i];
                 for (int j = 0; j < dimensions; j++) {
                     oos.writeFloat((float) (Math.random() * 8d - 4d));
                 }

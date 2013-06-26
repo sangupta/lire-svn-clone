@@ -322,7 +322,7 @@ public class SimpleColorHistogram implements LireFeature {
             throw new UnsupportedOperationException("Histogram lengths or color spaces do not match");
 
         // do the comparison ...
-        double sum = 0;
+//        double sum = 0;
         if (distFunc == DistanceFunction.JSD)
             return (float) MetricsUtils.jsd(histogram, ch.histogram);
         else if (distFunc == DistanceFunction.TANIMOTO)
@@ -472,7 +472,7 @@ public class SimpleColorHistogram implements LireFeature {
         int h = 0;
         int offset = 0;    // offset position in the quantization table
         int subspace = 0;
-        int q = 0;
+//        int q = 0;
 
         // define the subspace along the Diff axis
 

@@ -76,6 +76,8 @@ public class GeneralTest extends TestCase {
             "img06.JPG", "img07.JPG", "img08.JPG", "error.jpg"};
     private String testFilesPath = "./src/test/resources/images/";
     private String indexPath = "test-index";
+    
+    @SuppressWarnings("unused")
     private String testExtensive = "./wang-1000";
     
 	private static List<Class<? extends LireFeature>> featureClasses = new ArrayList<Class<? extends LireFeature>>();
@@ -260,8 +262,8 @@ public class GeneralTest extends TestCase {
             IndexReader reader = DirectoryReader.open(FSDirectory.open(new File("index-large")));
             // select one feature for the large index:
             int featureIndex = 13;
-            int count = 0;
-            long ms = System.currentTimeMillis();
+//            int count = 0;
+//            long ms = System.currentTimeMillis();
             ImageSearchHits hits = searchers[featureIndex].search(reader.document(queryDocID), reader);
             for (int j = 0; j < hits.length(); j++) {
                 String fileName = hits.doc(j).getValues(
@@ -277,7 +279,10 @@ public class GeneralTest extends TestCase {
         int queryDocID;
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File("index-large-new")));
         int featureIndex = 0;
+        
+        @SuppressWarnings("unused")
         ImageSearchHits hits = searchers[featureIndex].search(reader.document(0), reader);
+        
         hits = searchers[featureIndex].search(reader.document(1), reader);
         long ms = System.currentTimeMillis();
         for (int i = 0; i < 100; i++) {
@@ -294,8 +299,8 @@ public class GeneralTest extends TestCase {
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File("index-large")));
         // select one feature for the large index:
         int featureIndex = 4;
-        int count = 0;
-        long ms = System.currentTimeMillis();
+//        int count = 0;
+//        long ms = System.currentTimeMillis();
         ImageSearchHits hits = searchers[featureIndex].search(reader.document(queryDocID), reader);
         RerankFilter rerank = new RerankFilter(featureClasses.get(0), DocumentBuilder.FIELD_NAME_CEDD);
         LsaFilter lsa = new LsaFilter(featureClasses.get(0), DocumentBuilder.FIELD_NAME_CEDD);

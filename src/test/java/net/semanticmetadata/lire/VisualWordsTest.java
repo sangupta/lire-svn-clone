@@ -112,7 +112,9 @@ public class VisualWordsTest extends TestCase {
             IndexReader ir = DirectoryReader.open(FSDirectory.open(indexPath));
             SurfFeatureHistogramBuilder sfh = new SurfFeatureHistogramBuilder(ir);
             VisualWordsImageSearcher vis = new VisualWordsImageSearcher(10, DocumentBuilder.FIELD_NAME_SURF_VISUAL_WORDS);
-            Document doc = sfh.getVisualWords(surfBuilder.createDocument(ImageIO.read(new File(queryImage)), queryImage));
+            
+            sfh.getVisualWords(surfBuilder.createDocument(ImageIO.read(new File(queryImage)), queryImage));
+            
             ImageSearchHits hits = vis.search(ir.document(i), ir);
             FileUtils.saveImageResultsToPng("results_bow_no_tf_" + i, hits, queryImage);
         }

@@ -170,7 +170,7 @@ public class TestNister extends TestCase {
 
     public void benchmark(int numWords) throws IOException {
         numVisualWords = numWords;
-        String pathName = "nis_test_surf_" + numWords;
+//        String pathName = "nis_test_surf_" + numWords;
 //        createVocabulary(pathName);
 //        testDocLengthIDF(pathName);
         for (int k = 0; k < 5; k++) { // run the test 5 times ...
@@ -197,15 +197,25 @@ public class TestNister extends TestCase {
         int[] len = new int[10200];
 
         avgDocLength = 0;
+        
+        @SuppressWarnings("unused")
         double numDocs = 0;
-        for (int i = 0; i < df.length; i++)
+        
+        for (int i = 0; i < df.length; i++) {
             df[i] = 0;
-        for (int i = 0; i < len.length; i++)
+        }
+        
+        for (int i = 0; i < len.length; i++) {
             len[i] = 0;
+        }
+        
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(pathName)));
         for (int i = 0; i < reader.numDocs(); i++) {
 //            if (!reader.isDeleted(i)) {
+        	
+        	@SuppressWarnings("unused")
             String s = reader.document(i).getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0];
+        	
             String f = reader.document(i).getValues("featureSURFHistogram")[0];
             SimpleFeature sf = new SimpleFeature();
             sf.setStringRepresentation(f);
@@ -354,6 +364,7 @@ class FileUtils {
     /**
      * The UTF-8 character set, used to decode octets in URLs.
      */
+    @SuppressWarnings("unused")
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
     //-----------------------------------------------------------------------

@@ -111,7 +111,9 @@ public class MetricSpacesTest extends TestCase {
         int numSearches = 10;
         IndexReader reader = mes.getIndexReader(indexPath);
         System.out.println(reader.maxDoc() + " documents");
-        TopDocs docs;
+        
+        @SuppressWarnings("unused")
+		TopDocs docs;
 
         long ms = System.currentTimeMillis();
         for (int i = 0; i < numSearches; i++) {

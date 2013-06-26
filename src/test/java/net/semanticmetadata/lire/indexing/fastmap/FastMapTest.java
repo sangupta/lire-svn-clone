@@ -63,8 +63,13 @@ public class FastMapTest extends TestCase {
             "img06.JPG", "img07.JPG", "img08.JPG", "error.jpg"};
     //            "img06.JPG", "img07.JPG", "img08.JPG", "img08a.JPG", "error.jpg"};
     private String testFilesPath = "./lire/src/test/resources/images/";
-    private String indexPath = "test-index";
+    
+    @SuppressWarnings("unused")
+	private String indexPath = "test-index";
+    
+    @SuppressWarnings("unused")
     private String testExtensive = "../Caliph/testdata";
+    
     private DocumentBuilder db;
     private LinkedList<Document> docs;
 
