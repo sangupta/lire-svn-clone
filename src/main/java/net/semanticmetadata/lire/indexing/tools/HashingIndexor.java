@@ -66,9 +66,11 @@ import java.io.IOException;
  * @author sangupta, sandy.pec@gmail.com
  */
 public class HashingIndexor extends Indexor {
-    protected Class<PHOG> featureClass = PHOG.class;
+	
+    protected Class<? extends LireFeature> featureClass = PHOG.class;
 
-    public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
+    @SuppressWarnings("unchecked")
+	public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
         HashingIndexor indexor = new HashingIndexor();
         BitSampling.readHashFunctions();
 //        BitSampling.readHashFunctions(new FileInputStream(BitSampling.hashFunctionsFileName));
@@ -89,7 +91,7 @@ public class HashingIndexor extends Indexor {
                 // index
                 if ((i + 1) < args.length)
                     try {
-                        indexor.setFeatureClass(Class.forName(args[i + 1]));
+                        indexor.setFeatureClass((Class<? extends LireFeature>) Class.forName(args[i + 1]));
                     } catch (ClassNotFoundException e) {
                         System.err.println("Could not find feature class named " + args[i + 1]);
                         printHelp();
@@ -131,7 +133,7 @@ public class HashingIndexor extends Indexor {
         }
     }
 
-    public void setFeatureClass(Class featureClass) {
+    public void setFeatureClass(Class<? extends LireFeature> featureClass) {
         this.featureClass = featureClass;
     }
 

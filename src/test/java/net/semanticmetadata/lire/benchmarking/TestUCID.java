@@ -274,7 +274,7 @@ public class TestUCID extends TestCase {
         testSearchSpeed(images, SPJCD.class);
     }
 
-    private void testSearchSpeed(ArrayList<String> images, final Class featureClass) throws IOException {
+    private void testSearchSpeed(ArrayList<String> images, final Class<? extends LireFeature> featureClass) throws IOException {
         parallelIndexer = new ParallelIndexer(8, indexPath, testExtensive, true) {
             @Override
             public void addBuilders(ChainedDocumentBuilder builder) {

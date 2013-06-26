@@ -235,7 +235,7 @@ public class TestGeneral extends TestCase {
       }
   }  */
 
-    private ImageSearchHits rerank(ImageSearchHits hits, Document query, Class descriptorClass, String fieldName) throws IllegalAccessException, InstantiationException {
+    private ImageSearchHits rerank(ImageSearchHits hits, Document query, Class<? extends LireFeature> descriptorClass, String fieldName) throws IllegalAccessException, InstantiationException {
         ArrayList<SimpleResult> results = new ArrayList<SimpleResult>(hits.length());
         LireFeature qf = getFeature(descriptorClass, query.getValues(fieldName)[0]);
         float maxDistance = 0f;
@@ -250,7 +250,7 @@ public class TestGeneral extends TestCase {
         return new SimpleImageSearchHits(results, maxDistance);
     }
 
-    private LireFeature getFeature(Class descriptorClass, String data) throws IllegalAccessException, InstantiationException {
+    private LireFeature getFeature(Class<? extends LireFeature> descriptorClass, String data) throws IllegalAccessException, InstantiationException {
         LireFeature lf = (LireFeature) descriptorClass.newInstance();
         if (data != null && data.length() > 0) {
             lf.setStringRepresentation(data);

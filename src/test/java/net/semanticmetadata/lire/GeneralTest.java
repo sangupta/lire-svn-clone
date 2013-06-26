@@ -77,7 +77,8 @@ public class GeneralTest extends TestCase {
     private String indexPath = "test-index";
     private String testExtensive = "./wang-1000";
     
-    private Class[] featureClasses = new Class[]{
+    @SuppressWarnings("rawtypes")
+	private Class[] featureClasses = new Class[]{
             CEDD.class, FCTH.class, JCD.class, AutoColorCorrelogram.class, ColorLayout.class, EdgeHistogram.class,
             Gabor.class, JpegCoefficientHistogram.class,
             ScalableColor.class, SimpleColorHistogram.class, Tamura.class, FuzzyColorHistogram.class, PHOG.class
@@ -118,7 +119,7 @@ public class GeneralTest extends TestCase {
     };
 
     public void testExtractionAndMetric() throws IOException, IllegalAccessException, InstantiationException {
-        for (Class c : featureClasses) {
+        for (@SuppressWarnings("rawtypes") Class c : featureClasses) {
             LireFeature lireFeature = (LireFeature) c.newInstance();
             LireFeature tmpLireFeature = (LireFeature) c.newInstance();
             for (String file : testFiles) {
