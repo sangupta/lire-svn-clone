@@ -75,7 +75,7 @@ public class ProximityHashingIndexor {
     HashSet<Integer> representativesID;
     ArrayList<LireFeature> representatives;
 
-    protected Class<ColorLayout> featureClass = ColorLayout.class;
+    protected Class<? extends LireFeature> featureClass = ColorLayout.class;
 
     public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
         ProximityHashingIndexor indexor = new ProximityHashingIndexor();
@@ -171,7 +171,7 @@ public class ProximityHashingIndexor {
     }
 
 
-    public void setFeatureClass(Class featureClass) {
+    public void setFeatureClass(Class<? extends LireFeature> featureClass) {
         this.featureClass = featureClass;
     }
 

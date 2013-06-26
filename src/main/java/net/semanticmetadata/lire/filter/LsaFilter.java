@@ -65,15 +65,16 @@ import java.util.logging.Logger;
  * Created 05.08.11, 08:41 <br/>
  *
  * @author Mathias Lux, mathias@juggle.at
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class LsaFilter implements SearchHitsFilter {
     private Logger logger = Logger.getLogger(getClass().getName());
-    private Class featureClass;
+    private Class<? extends LireFeature> featureClass;
     private String fieldName;
     private LireFeature tempFeature = null;
     private int numberOfDimensions = -1;
 
-    public LsaFilter(Class featureClass, String fieldName) {
+    public LsaFilter(Class<? extends LireFeature> featureClass, String fieldName) {
         this.featureClass = featureClass;
         this.fieldName = fieldName;
     }

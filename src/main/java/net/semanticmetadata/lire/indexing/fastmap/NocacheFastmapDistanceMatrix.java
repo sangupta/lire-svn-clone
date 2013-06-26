@@ -39,12 +39,13 @@
 
 package net.semanticmetadata.lire.indexing.fastmap;
 
-import net.semanticmetadata.lire.matrix.SimilarityMatrix;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+
+import net.semanticmetadata.lire.imageanalysis.LireFeature;
+import net.semanticmetadata.lire.matrix.SimilarityMatrix;
 
 /**
  * Simulated distance matrix. No internal object is used to create the matrix, but the
@@ -54,11 +55,13 @@ import java.util.List;
  * Time: 12:56:13
  *
  * @author Mathias Lux, mathias@juggle.at
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class NocacheFastmapDistanceMatrix implements FastmapDistanceMatrix {
     //    private double[][] distance;
     //    protected HashMap<Integer, HashMap> distance;
-    private ArrayList<?> objects;
+    
+	private ArrayList<LireFeature> objects;
     private HashMap<Object, Integer> objects2position;
     private DistanceCalculator distanceFct;
     private int dimension;
@@ -71,8 +74,7 @@ public class NocacheFastmapDistanceMatrix implements FastmapDistanceMatrix {
      * @param userObjects      gives the collection of object to be processed
      * @param distanceFunction allows the distance calculation  or -1 if objects distance cannot be computes, has to be a metric
      */
-    @SuppressWarnings("unchecked")
-    public NocacheFastmapDistanceMatrix(List userObjects, DistanceCalculator distanceFunction) {
+    public NocacheFastmapDistanceMatrix(List<LireFeature> userObjects, DistanceCalculator distanceFunction) {
         init(distanceFunction, userObjects);
     }
 
@@ -84,23 +86,21 @@ public class NocacheFastmapDistanceMatrix implements FastmapDistanceMatrix {
      * @param distanceFunction allows the distance calculation  or -1 if objects distance cannot be computes, has to be a metric
      * @param userObjects      select true if you want to distribute not equal but zero distance objects.
      */
-    @SuppressWarnings("unchecked")
-    public NocacheFastmapDistanceMatrix(List userObjects, DistanceCalculator distanceFunction, boolean distributeObjects) {
+    public NocacheFastmapDistanceMatrix(List<LireFeature> userObjects, DistanceCalculator distanceFunction, boolean distributeObjects) {
         init(distanceFunction, userObjects);
         this.distributeObjects = distributeObjects;
     }
 
-    @SuppressWarnings("unchecked")
-    private void init(DistanceCalculator distanceFunction, List userObjects) {
+    private void init(DistanceCalculator distanceFunction, List<LireFeature> userObjects) {
         distanceFct = distanceFunction;
         // this might be a problem for collections > INT_MAXSIZE
-        this.objects = new ArrayList(userObjects.size());
+        this.objects = new ArrayList<LireFeature>(userObjects.size());
         this.objects.addAll(userObjects);
         dimension = objects.size();
         // init HashMaps ...
         objects2position = new HashMap<Object, Integer>(dimension);
         int count = 0;
-        for (Iterator iterator = objects.iterator(); iterator.hasNext(); ) {
+        for (Iterator<LireFeature> iterator = objects.iterator(); iterator.hasNext(); ) {
             Object o = iterator.next();
             objects2position.put(o, count);
             count++;

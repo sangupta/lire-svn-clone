@@ -59,13 +59,14 @@ import java.util.logging.Logger;
  * Created 03.08.11, 10:28 <br/>
  *
  * @author Mathias Lux, mathias@juggle.at
+ * @author sangupta, sandy.pec@gmail.com
  */
 public class RerankFilter implements SearchHitsFilter {
     private Logger logger = Logger.getLogger(getClass().getName());
-    private Class featureClass;
+    private Class<? extends LireFeature> featureClass;
     private String fieldName;
 
-    public RerankFilter(Class featureClass, String fieldName) {
+    public RerankFilter(Class<? extends LireFeature> featureClass, String fieldName) {
         this.featureClass = featureClass;
         this.fieldName = fieldName;
     }

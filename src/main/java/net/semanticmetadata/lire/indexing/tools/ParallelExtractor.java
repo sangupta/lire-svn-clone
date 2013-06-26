@@ -476,7 +476,7 @@ public class ParallelExtractor implements Runnable {
         }
     }
 
-    private void addFeatures(List features) {
+    private void addFeatures(List<LireFeature> features) {
         for (Iterator<LireFeature> iterator = listOfFeatures.iterator(); iterator.hasNext(); ) {
             LireFeature next = iterator.next();
             try {
