@@ -75,6 +75,11 @@ public class FileUtils {
     public static ArrayList<String> getAllImages(File directory, boolean descendIntoSubDirectories) throws IOException {
         ArrayList<String> resultList = new ArrayList<String>(256);
         File[] f = directory.listFiles();
+        
+        if(f == null || f.length == 0) {
+        	return null;
+        }
+        
         for (File file : f) {
             if (file != null && (file.getName().toLowerCase().endsWith(".jpg") || file.getName().toLowerCase().endsWith(".png") || file.getName().toLowerCase().endsWith(".gif")) && !file.getName().startsWith("tn_")) {
                 resultList.add(file.getCanonicalPath());
@@ -86,10 +91,12 @@ public class FileUtils {
                 }
             }
         }
-        if (resultList.size() > 0)
+        
+        if (resultList.size() > 0) {
             return resultList;
-        else
-            return null;
+        }
+        
+        return null;
     }
 
 //    public static BufferedImage openImage(String path) {
