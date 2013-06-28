@@ -218,18 +218,23 @@ public class ImageUtils {
     public static float[] makeGaussianKernel(int radius, float sigma) {
             float[] kernel = new float[radius * radius];
             float sum = 0;
+            
+            float twiceOfSigmaSquare = 2 * (sigma * sigma);
+            
             for (int y = 0; y < radius; y++) {
                 for (int x = 0; x < radius; x++) {
                     int off = y * radius + x;
                     int xx = x - radius / 2;
                     int yy = y - radius / 2;
-                    kernel[off] = (float) Math.pow(Math.E, -(xx * xx + yy * yy)
-                            / (2 * (sigma * sigma)));
+                    kernel[off] = (float) Math.pow(Math.E, -(xx * xx + yy * yy) / twiceOfSigmaSquare);
                     sum += kernel[off];
                 }
             }
-            for (int i = 0; i < kernel.length; i++)
+            
+            for (int i = 0; i < kernel.length; i++) {
                 kernel[i] /= sum;
+            }
+            
             return kernel;
     }
 
