@@ -34,8 +34,11 @@ The following changes have been made from the original repo
 on Google Code (http://code.google.com/p/lire). Hopefully,
 these will make into the original repo some day.
 
-* Mavenization of the project
-* Removed all warnings of resource leaks
-* Implemented type-safety by using generics than raw types.
+With github commit: 799b2a09f6846f711bde3bd0108e0e5b65f28cca
+
+ * Mavenization of the project
+ * Removed all warnings of resource leaks
+ * Implemented type-safety by using generics than raw types
+ * Upgraded Lucene code to not use deprecated methods
 
 - Sandeep Gupta (twitter.com/sangupta)
