@@ -44,7 +44,6 @@ package net.semanticmetadata.lire.indexing.tools;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
 import net.semanticmetadata.lire.imageanalysis.PHOG;
 import net.semanticmetadata.lire.indexing.hashing.BitSampling;
-import net.semanticmetadata.lire.indexing.hashing.LocalitySensitiveHashing;
 import net.semanticmetadata.lire.utils.SerializationUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
@@ -74,7 +73,7 @@ public class HashingIndexor extends Indexor {
         HashingIndexor indexor = new HashingIndexor();
         BitSampling.readHashFunctions();
 //        BitSampling.readHashFunctions(new FileInputStream(BitSampling.hashFunctionsFileName));
-        LocalitySensitiveHashing.readHashFunctions();
+//        LocalitySensitiveHashing.readHashFunctions();
         for (int i = 0; i < args.length; i++) {
             String arg = args[i];
             if (arg.startsWith("-i") || arg.startsWith("--input-file")) {
@@ -106,21 +105,14 @@ public class HashingIndexor extends Indexor {
             } else if (arg.startsWith("-c")) {
                 // list of input files within a file.
                 if ((i + 1) < args.length) {
-                    BufferedReader br = null;
-                    try {
-						br = new BufferedReader(new FileReader(new File(args[i + 1])));
-	                    String file;
-	                    while ((file = br.readLine()) != null) {
-	                        if (file.trim().length() > 2) {
-	                            File f = new File(file);
-	                            if (f.exists()) indexor.addInputFile(f);
-	                            else System.err.println("Did not find file " + f.getCanonicalPath());
-	                        }
-	                    }
-                    } finally {
-                    	if(br != null) {
-                    		br.close();
-                    	}
+                    BufferedReader br = new BufferedReader(new FileReader(new File(args[i + 1])));
+                    String file;
+                    while ((file = br.readLine()) != null) {
+                        if (file.trim().length() > 2) {
+                            File f = new File(file);
+                            if (f.exists()) indexor.addInputFile(f);
+                            else System.err.println("Did not find file " + f.getName());
+                        }
                     }
                 } else printHelp();
             }

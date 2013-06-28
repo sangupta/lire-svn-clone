@@ -65,7 +65,7 @@ import java.util.Iterator;
  * Created 03.08.11, 11:09 <br/>
  *
  * @author Mathias Lux, mathias@juggle.at
- * @author sangupta, sandy.pec@gmail.com
+ * @author sangupta, sandy.pec@gmail.com (fixed deprecation)
  */
 public class FilterTest extends TestCase {
 

@@ -41,6 +41,23 @@
 
 package net.semanticmetadata.lire.benchmarking;
 
+import java.io.File;
+import java.io.FileFilter;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.math.BigInteger;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
+
+import javax.imageio.ImageIO;
+
 import junit.framework.TestCase;
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.ImageSearchHits;
@@ -50,6 +67,7 @@ import net.semanticmetadata.lire.impl.SiftDocumentBuilder;
 import net.semanticmetadata.lire.impl.VisualWordsImageSearcher;
 import net.semanticmetadata.lire.utils.LuceneUtils;
 import net.semanticmetadata.lire.utils.StatsUtils;
+
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -58,16 +76,6 @@ import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Bits;
-
-import javax.imageio.ImageIO;
-import java.io.*;
-import java.math.BigInteger;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
 
 /**
  * User: mlux
@@ -200,7 +208,6 @@ public class TestNister extends TestCase {
         
         @SuppressWarnings("unused")
         double numDocs = 0;
-        
         for (int i = 0; i < df.length; i++) {
             df[i] = 0;
         }
@@ -208,7 +215,7 @@ public class TestNister extends TestCase {
         for (int i = 0; i < len.length; i++) {
             len[i] = 0;
         }
-        
+            
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(pathName)));
         for (int i = 0; i < reader.numDocs(); i++) {
 //            if (!reader.isDeleted(i)) {

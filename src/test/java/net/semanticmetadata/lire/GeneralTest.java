@@ -53,12 +53,13 @@ import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
 import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.store.MMapDirectory;
 
 import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -309,6 +310,110 @@ public class GeneralTest extends TestCase {
         FileUtils.saveImageResultsToPng("GeneralTest_rerank_1_new", hits, reader.document(queryDocID).getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]);
         hits = lsa.filter(hits, reader.document(queryDocID));
         FileUtils.saveImageResultsToPng("GeneralTest_rerank_2_lsa", hits, reader.document(queryDocID).getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]);
+    }
+
+    public void testClassify() throws IOException {
+        boolean weightByRank = true;
+        String[] classes = {"2012", "beach", "food", "london", "music", "nature", "people", "sky", "travel", "wedding"};
+        int k = 20;
+        // CONFIG
+        String fieldName = DocumentBuilder.FIELD_NAME_PHOG;
+        LireFeature feature = new PHOG();
+        String indexPath = "E:\\acmgc-phog-idx";
+        System.out.println("Tests for feature " + fieldName + " with k="+k + " - weighting by rank sum: " + weightByRank);
+        System.out.println("========================================");
+        HashMap<String, Integer> tag2count = new HashMap<String, Integer>(k);
+        HashMap<String, Double> tag2weight = new HashMap<String, Double>(k);
+        for (int c = 0; c < 10; c++) {
+            String classIdentifier = classes[c];
+            String listFiles = "D:\\DataSets\\Yahoo-GC\\test\\" + classIdentifier + ".txt";
+
+            // INIT
+            int[] confusion = new int[10];
+            Arrays.fill(confusion, 0);
+            HashMap<String, Integer> class2id = new HashMap<String, Integer>(10);
+            for (int i = 0; i < classes.length; i++)
+                class2id.put(classes[i], i);
+
+            BufferedReader br = new BufferedReader(new FileReader(listFiles));
+            String line;
+            IndexReader ir = DirectoryReader.open(MMapDirectory.open(new File(indexPath)));
+            ImageSearcher bis = new GenericFastImageSearcher(k, feature.getClass(), fieldName, true, ir);
+//            BitSamplingImageSearcher bis = new BitSamplingImageSearcher(k, fieldName, fieldName + "_hash", feature, 1000);
+            ImageSearchHits hits;
+            int count = 0, countCorrect = 0;
+            long ms = System.currentTimeMillis();
+            while ((line = br.readLine()) != null && count < 1000) {
+                try {
+                    tag2count.clear();
+                    tag2weight.clear();
+                    hits = bis.search(ImageIO.read(new File(line)), ir);
+                    // set tag weights and counts.
+                    for (int l = 0; l < k; l++) {
+                        String tag = getTag(hits.doc(l));
+                        if (tag2count.get(tag) == null) tag2count.put(tag, 1);
+                        else tag2count.put(tag, tag2count.get(tag) + 1);
+                        if (weightByRank) {
+                            if (tag2weight.get(tag) == null) tag2weight.put(tag, (double) l);
+                            else tag2weight.put(tag, (double) l + tag2weight.get(tag));
+                        } else {
+                            if (tag2weight.get(tag) == null) tag2weight.put(tag, Double.valueOf(hits.score(l)));
+                            else tag2weight.put(tag, (double) l + hits.score(l));
+                        }
+                    }
+                    // find class:
+                    int maxCount = 0, maxima = 0;
+                    String classifiedAs = null;
+                    for (Iterator<String> tagIterator = tag2count.keySet().iterator(); tagIterator.hasNext(); ) {
+                        String tag = tagIterator.next();
+                        if (tag2count.get(tag) > maxCount) {
+                            maxCount = tag2count.get(tag);
+                            maxima = 1;
+                            classifiedAs = tag;
+                        } else if (tag2count.get(tag) == maxCount) {
+                            maxima++;
+                        }
+                    }
+                    // if there are two or more classes with the same number of results, then we take a look at the weights.
+                    // else the class is alread given in classifiedAs.
+                    if (maxima > 1) {
+                        double minWeight = Double.MAX_VALUE;
+                        for (Iterator<String> tagIterator = tag2count.keySet().iterator(); tagIterator.hasNext(); ) {
+                            String tag = tagIterator.next();
+                            if (tag2weight.get(tag) < minWeight) {
+                                minWeight = tag2weight.get(tag);
+                                classifiedAs = tag;
+                            }
+                        }
+                    }
+//                    if (tag2.equals(tag3)) tag1 = tag2;
+                    count++;
+                    if (classifiedAs.equals(classIdentifier)) countCorrect++;
+                    // confusion:
+                    confusion[class2id.get(classifiedAs)]++;
+                    System.out.printf("%10s (%4.3f, %10d, %4d)\n", classifiedAs, ((double) countCorrect / (double) count), count, (System.currentTimeMillis() - ms) / count);
+                } catch (Exception e) {
+                    System.err.println(e.getMessage());
+                }
+            }
+//            System.out.println("Results for class " + classIdentifier);
+            System.out.printf("Class\tAvg. Precision\tCount Test Images\tms per test\n");
+            System.out.printf("%s\t%4.5f\t%10d\t%4d\n", classIdentifier, ((double) countCorrect / (double) count), count, (System.currentTimeMillis() - ms) / count);
+            System.out.printf("Confusion\t");
+//            for (int i = 0; i < classes.length; i++) {
+//                System.out.printf("%s\t", classes[i]);
+//            }
+//            System.out.println();
+            for (int i = 0; i < classes.length; i++) {
+                System.out.printf("%d\t", confusion[i]);
+            }
+            System.out.println();
+        }
+    }
+
+    private String getTag(Document d) {
+        StringBuilder ab = new StringBuilder(d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0].replace("E:\\I:\\ACM_complete_dataset\\", ""));
+        return ab.substring(0, ab.indexOf("\\")).toString();
     }
 
 }

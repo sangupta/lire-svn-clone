@@ -60,7 +60,7 @@ import java.util.zip.ZipOutputStream;
  * <br>Time: 09:44:49
  *
  * @author Mathias Lux, mathias@juggle.at
- * @author sangupta, sandy.pec@gmail.com
+ * @author sangupta, sandy.pec@gmail.com (closed streams in finally clause)
  */
 public class FileUtils {
     enum FileTypes {JPG, GIF, TIF, PNG, PDF, UNKNOWN};
@@ -346,9 +346,7 @@ public class FileUtils {
     @SuppressWarnings("unused")
 	private static FileTypes identifyFileType(File file) throws IOException {
         byte[] buffer = new byte[8];
-        
         InputStream in = null;
-        
         try {
 			in = new FileInputStream(file);
 	        in.read(buffer);

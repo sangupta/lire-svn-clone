@@ -54,10 +54,8 @@ import net.semanticmetadata.lire.impl.SiftDocumentBuilder;
 import net.semanticmetadata.lire.impl.SurfDocumentBuilder;
 import net.semanticmetadata.lire.utils.FileUtils;
 import net.semanticmetadata.lire.utils.LuceneUtils;
-
 import org.apache.lucene.index.DirectoryReader;
-import org.apache.lucene.index.IndexWriter;
-import org.apache.lucene.store.FSDirectory;
+import org.apache.lucene.index.IndexWriter;import org.apache.lucene.store.FSDirectory;
 
 //import net.semanticmetadata.lire.clustering.Image;
 

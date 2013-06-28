@@ -59,7 +59,7 @@ import java.util.logging.Logger;
  * Time: 14:32:15
  *
  * @author Mathias Lux, mathias@juggle.at
- * @author sangupta, sandy.pec@gmail.com
+ * @author sangupta, sandy.pec@gmail.com (fixed null pointer exception)
  */
 public class GenericDocumentBuilder extends AbstractDocumentBuilder {
     enum HashingMode {BitSampling, LSH}
