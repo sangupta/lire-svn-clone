@@ -90,9 +90,7 @@ public class DynamicProgrammingAutoCorrelogramExtraction implements IAutoCorrelo
      * @return float[][] the auto-correlogram A[color][distance]
      */
     public synchronized float[][] extract(int maxFeatureValue, int[] distanceSet, int[][] img) {
-    	@SuppressWarnings("unused")
         long totalComplexity = 0;
-    	
         final int W = img.length;
         final int H = img[0].length;
 

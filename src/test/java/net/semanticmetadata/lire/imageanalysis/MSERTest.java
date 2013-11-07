@@ -58,8 +58,6 @@ public class MSERTest extends TestCase {
     public void testMSERExtraction() throws IOException {
         MSERDocumentBuilder db = new MSERDocumentBuilder();
         String file = "./wang-1000/199.jpg";
-        
-        @SuppressWarnings("unused")
         Document document = db.createDocument(ImageIO.read(new FileInputStream(file)), file);
 //        byte[][] binaryValues = document.getBinaryValues(DocumentBuilder.FIELD_NAME_MSER);
 //        System.out.println("binaryValues.length = " + binaryValues.length);

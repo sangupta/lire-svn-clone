@@ -39,16 +39,15 @@
 
 package net.semanticmetadata.lire.impl;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.image.BufferedImage;
-import java.util.logging.Logger;
-
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.imageanalysis.ColorLayout;
-
 import org.apache.lucene.document.Document;
-import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.Field;
+import org.apache.lucene.document.StringField;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.logging.Logger;
 
 /**
  * Factory for creating documents for one color images in a fast and efficient way.
@@ -57,6 +56,7 @@ import org.apache.lucene.document.StoredField;
  * <br>Time: 13:03:30
  *
  * @author Mathias Lux, mathias@juggle.at
+ * @deprecated no longer needed, will be deleted.
  */
 public class DocumentFactory {
     // create the logger for this factory:
@@ -87,7 +87,7 @@ public class DocumentFactory {
         logger.fine("Extraction from image finished");
         Document doc = new Document();
         if (sc != null)
-            doc.add(new StoredField(DocumentBuilder.FIELD_NAME_COLORLAYOUT, sc));
+            doc.add(new StringField(DocumentBuilder.FIELD_NAME_COLORLAYOUT, sc, Field.Store.YES));
         return doc;
     }
 }

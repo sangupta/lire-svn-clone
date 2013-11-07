@@ -42,7 +42,6 @@ import junit.framework.TestCase;
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.DocumentBuilderFactory;
 import net.semanticmetadata.lire.imageanalysis.*;
-
 import org.apache.lucene.document.Document;
 
 import java.io.FileInputStream;
@@ -55,21 +54,14 @@ import java.util.LinkedList;
  * User: Mathias Lux
  * Date: 21.04.2008
  * Time: 11:14:03
- * 
- * @author sangupta, sandy.pec@gmail.com
  */
 public class FastMapTest extends TestCase {
     private String[] testFiles = new String[]{"img01.JPG", "img02.JPG", "img03.JPG", "img04.JPG", "img05.JPG",
             "img06.JPG", "img07.JPG", "img08.JPG", "error.jpg"};
     //            "img06.JPG", "img07.JPG", "img08.JPG", "img08a.JPG", "error.jpg"};
     private String testFilesPath = "./lire/src/test/resources/images/";
-    
-    @SuppressWarnings("unused")
-	private String indexPath = "test-index";
-    
-    @SuppressWarnings("unused")
+    private String indexPath = "test-index";
     private String testExtensive = "../Caliph/testdata";
-    
     private DocumentBuilder db;
     private LinkedList<Document> docs;
 
@@ -138,7 +130,7 @@ public class FastMapTest extends TestCase {
 //        String fieldName = DocumentBuilder.FIELD_NAME_CEDD;
 
         // Color histogram
-        Class<SimpleColorHistogram> descriptor = SimpleColorHistogram.class;
+        Class descriptor = SimpleColorHistogram.class;
         String fieldName = DocumentBuilder.FIELD_NAME_COLORHISTOGRAM;
 
         LinkedList<LireFeature> objs = new LinkedList<LireFeature>();

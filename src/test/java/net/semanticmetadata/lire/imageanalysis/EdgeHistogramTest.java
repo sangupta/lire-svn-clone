@@ -49,9 +49,22 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 
 public class EdgeHistogramTest extends TestCase {
+
+    public void testSingleFile() throws IOException {
+        EdgeHistogram e = new EdgeHistogram();
+        e.extract(ImageIO.read(new File("wipo_us_ken.jpg")));
+        System.out.println(Arrays.toString(e.getDoubleHistogram()));
+        System.out.println(Arrays.toString(e.getByteArrayRepresentation()));
+
+        e.extract(ImageIO.read(new File("wipo_us_fita.jpg")));
+        System.out.println(Arrays.toString(e.getDoubleHistogram()));
+        System.out.println(Arrays.toString(e.getByteArrayRepresentation()));
+    }
+
     public void testExtraction() throws IOException {
         ArrayList<File> files = FileUtils.getAllImageFiles(new File("testdata/ferrari"), true);
         for (Iterator<File> iterator = files.iterator(); iterator.hasNext(); ) {
@@ -64,6 +77,33 @@ public class EdgeHistogramTest extends TestCase {
             System.out.println(" = " + eh1.getStringRepresentation());
             eh2.setByteArrayRepresentation(eh1.getByteArrayRepresentation());
             assertTrue(eh2.getDistance(eh1) == 0);
+        }
+    }
+
+    public void testSerializationAndReUse() throws IOException, IllegalAccessException, InstantiationException {
+        LireFeature f = new EdgeHistogram();
+        String[] testFiles = new String[]{"D:\\DataSets\\WIPO-CA\\converted-0\\1001557.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1001714.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1001816.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1001651.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1002071.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1001809.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1001627.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1001611.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1001855.png",
+                "D:\\DataSets\\WIPO-CA\\converted-0\\1002011.png"};
+        for (String testFile : testFiles) {
+//            f=new EdgeHistogram();
+            f.extract(ImageIO.read(new File(testFile)));
+            LireFeature f2 = new EdgeHistogram();
+//            f2.setByteArrayRepresentation(f.getByteArrayRepresentation(), 0, f.getByteArrayRepresentation().length);
+            f2.extract(ImageIO.read(new File(testFile)));
+//            f2.getByteArrayRepresentation();
+            System.out.println(testFile);
+            System.out.println(Arrays.toString(f.getDoubleHistogram()).replaceAll("\\.0,",""));
+            System.out.println(Arrays.toString(f2.getDoubleHistogram()).replaceAll("\\.0,", ""));
+            System.out.println(f2.getDistance(f));
+//            assertEquals(f2.getDistance(f), 0d, 0.000000001);
         }
     }
 }

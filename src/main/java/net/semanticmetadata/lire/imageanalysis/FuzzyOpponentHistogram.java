@@ -32,13 +32,16 @@
  * URL: http://www.morganclaypool.com/doi/abs/10.2200/S00468ED1V01Y201301ICR025
  *
  * Copyright statement:
- * --------------------
+ * ====================
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
- *     http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *
+ * Updated: 11.07.13 10:33
  */
 
 package net.semanticmetadata.lire.imageanalysis;
 
+import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.utils.ImageUtils;
 import net.semanticmetadata.lire.utils.MetricsUtils;
 
@@ -89,7 +92,7 @@ public class FuzzyOpponentHistogram extends Histogram implements LireFeature {
             for (int j = 0; j < histogram[i].length; j++)
                 histogram[i][j] = 0;
         }
-        WritableRaster grey = ImageUtils.convertImageToGrey(bimg).getRaster();
+        WritableRaster grey = ImageUtils.getGrayscaleImage(bimg).getRaster();
         WritableRaster raster = bimg.getRaster();
         int[] px = new int[3];
         int[] intens = new int[1];
@@ -241,5 +244,15 @@ public class FuzzyOpponentHistogram extends Histogram implements LireFeature {
             descriptor[i] = Integer.parseInt(st.nextToken());
         }
 
+    }
+
+    @Override
+    public String getFeatureName() {
+        return "Fuzzy Opponent Histogram";
+    }
+
+    @Override
+    public String getFieldName() {
+        return "f_fuzopphis";
     }
 }

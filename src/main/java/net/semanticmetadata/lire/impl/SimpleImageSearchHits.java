@@ -64,7 +64,6 @@ public class SimpleImageSearchHits implements ImageSearchHits {
         // this step normalizes and inverts the distance ...
         // although its now a score or similarity like measure its further called distance
         for (Iterator<SimpleResult> iterator = this.results.iterator(); iterator.hasNext(); ) {
-        	@SuppressWarnings("unused")
             SimpleResult result = iterator.next();
             // result.setDistance(1f - result.getDistance() / maxDistance);
         }

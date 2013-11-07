@@ -62,8 +62,6 @@ import java.util.zip.GZIPInputStream;
  * @author Mathias Lux, mathias@juggle.at
  *         Date: 08.03.13
  *         Time: 14:28
- *         
- * @author sangupta, sandy.pec@gmail.com
  */
 public class ProximityHashingIndexor {
     protected LinkedList<File> inputFiles = new LinkedList<File>();
@@ -75,7 +73,7 @@ public class ProximityHashingIndexor {
     HashSet<Integer> representativesID;
     ArrayList<LireFeature> representatives;
 
-    protected Class<? extends LireFeature> featureClass = ColorLayout.class;
+    protected Class featureClass = ColorLayout.class;
 
     public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
         ProximityHashingIndexor indexor = new ProximityHashingIndexor();
@@ -100,26 +98,14 @@ public class ProximityHashingIndexor {
             } else if (arg.startsWith("-c")) {
                 // list of input files within a file.
                 if ((i + 1) < args.length) {
-                    BufferedReader br = null;
-                    
-                    try {
-						br = new BufferedReader(new FileReader(new File(args[i + 1])));
-	                    String file;
-	                    while ((file = br.readLine()) != null) {
-	                        if (file.trim().length() > 2) {
-	                            File f = new File(file);
-	                            if (f.exists()) indexor.addInputFile(f);
-	                            else System.err.println("Did not find file " + f.getCanonicalPath());
-	                        }
-	                    }
-                    } finally {
-                    	if(br != null) {
-                    		try {
-                    			br.close();
-                    		} catch(IOException e) {
-                    			e.printStackTrace();
-                    		}
-                    	}
+                    BufferedReader br = new BufferedReader(new FileReader(new File(args[i + 1])));
+                    String file;
+                    while ((file = br.readLine()) != null) {
+                        if (file.trim().length() > 2) {
+                            File f = new File(file);
+                            if (f.exists()) indexor.addInputFile(f);
+                            else System.err.println("Did not find file " + f.getCanonicalPath());
+                        }
                     }
                 } else printHelp();
             }
@@ -171,7 +157,7 @@ public class ProximityHashingIndexor {
     }
 
 
-    public void setFeatureClass(Class<? extends LireFeature> featureClass) {
+    public void setFeatureClass(Class featureClass) {
         this.featureClass = featureClass;
     }
 
@@ -186,14 +172,15 @@ public class ProximityHashingIndexor {
                 run = 0;
                 readFile(indexWriter, inputFile);
                 if (verbose) System.out.printf("%d images found in the data file.\n", docCount);
-                int numReps = 1000;  // TODO: clever selection.
-                if (numReps > docCount / 10) numReps = docCount / 10;
-                if (verbose) System.out.printf("Selecting %d representative images for hashing.\n", numReps);
-                representativesID = new HashSet<Integer>(numReps);
-                while (representativesID.size() < numReps) {
+                int numberOfRepresentatives = 1000;  // TODO: clever selection.
+                // select a number of representative "fixed stars" randomly from file
+                if (numberOfRepresentatives > docCount / 10) numberOfRepresentatives = docCount / 10;
+                if (verbose) System.out.printf("Selecting %d representative images for hashing.\n", numberOfRepresentatives);
+                representativesID = new HashSet<Integer>(numberOfRepresentatives);
+                while (representativesID.size() < numberOfRepresentatives) {
                     representativesID.add((int) Math.floor(Math.random() * (docCount - 1)));
                 }
-                representatives = new ArrayList<LireFeature>(numReps);
+                representatives = new ArrayList<LireFeature>(numberOfRepresentatives);
                 docCount = 0;
                 run = 1;
                 if (verbose) System.out.println("Now getting representatives from the data file.");
@@ -224,8 +211,7 @@ public class ProximityHashingIndexor {
     private void readFile(IndexWriter indexWriter, File inputFile) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
         BufferedInputStream in = new BufferedInputStream(new GZIPInputStream(new FileInputStream(inputFile)));
         byte[] tempInt = new byte[4];
-        int tmp, tmpFeature;
-//        int count = 0;
+        int tmp, tmpFeature, count = 0;
         byte[] temp = new byte[100 * 1024];
         // read file hashFunctionsFileName length:
         while (in.read(tempInt, 0, 4) > 0) {
@@ -273,7 +259,7 @@ public class ProximityHashingIndexor {
                 // put it into a temporary data structure ...
                 representatives.add(feature);
             }
-        } else if (run == 2) {
+        } else if (run == 2) { // actual hashing: find the nearest representatives and put those as a hash into a document.
             if (feature.getClass().getCanonicalName().equals(featureClass.getCanonicalName())) { // it's a feature to be hashed
                 document.add(new TextField(featureFieldName + "_hash", SerializationUtils.arrayToString(getHashes(feature)), Field.Store.YES));
             }

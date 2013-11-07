@@ -82,11 +82,7 @@ public class TestGeneral extends TestCase {
     private String queryImage;
 
     private static boolean cutImages = false;
-    
-    @SuppressWarnings("unused")
     private double[][] mdata = null;
-    
-    @SuppressWarnings("unused")
     private ArrayList<Document> index;
 
     protected void setUp() {
@@ -204,7 +200,7 @@ public class TestGeneral extends TestCase {
             queryImage = testIterator.next();
             Document query;
             if (cutImages) {
-//                BufferedImage bimg = ImageUtils.cropImage(ImageIO.read(new FileInputStream(queryImage)), 0, 0, 200, 69);
+                BufferedImage bimg = ImageUtils.cropImage(ImageIO.read(new FileInputStream(queryImage)), 0, 0, 200, 69);
                 query = builder.createDocument(new FileInputStream(queryImage), queryImage);
             } else
                 query = builder.createDocument(new FileInputStream(queryImage), queryImage);
@@ -239,8 +235,7 @@ public class TestGeneral extends TestCase {
       }
   }  */
 
-    @SuppressWarnings("unused")
-	private ImageSearchHits rerank(ImageSearchHits hits, Document query, Class<? extends LireFeature> descriptorClass, String fieldName) throws IllegalAccessException, InstantiationException {
+    private ImageSearchHits rerank(ImageSearchHits hits, Document query, Class descriptorClass, String fieldName) throws IllegalAccessException, InstantiationException {
         ArrayList<SimpleResult> results = new ArrayList<SimpleResult>(hits.length());
         LireFeature qf = getFeature(descriptorClass, query.getValues(fieldName)[0]);
         float maxDistance = 0f;
@@ -255,7 +250,7 @@ public class TestGeneral extends TestCase {
         return new SimpleImageSearchHits(results, maxDistance);
     }
 
-    private LireFeature getFeature(Class<? extends LireFeature> descriptorClass, String data) throws IllegalAccessException, InstantiationException {
+    private LireFeature getFeature(Class descriptorClass, String data) throws IllegalAccessException, InstantiationException {
         LireFeature lf = (LireFeature) descriptorClass.newInstance();
         if (data != null && data.length() > 0) {
             lf.setStringRepresentation(data);
@@ -264,8 +259,7 @@ public class TestGeneral extends TestCase {
     }
 
 
-    @SuppressWarnings("unused")
-	private void saveToHtml(String prefix, ImageSearchHits hits, String queryImage) throws IOException {
+    private void saveToHtml(String prefix, ImageSearchHits hits, String queryImage) throws IOException {
         BufferedWriter bw = new BufferedWriter(new FileWriter("results - " + prefix + ".html"));
         bw.write("<html>\n" +
                 "<head><title>Search Results</title></head>\n" +

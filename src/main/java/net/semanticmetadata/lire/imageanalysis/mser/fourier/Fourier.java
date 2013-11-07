@@ -473,8 +473,7 @@ public class Fourier {
         Complex Det = new Complex(0, 0);
         Complex UpStar = new Complex(0, 0);
         Complex VpStar = new Complex(0, 0);
-        
-//        int p = 0;
+        int p = 0;
         // look for index of the coefficient to norm onto
         for (int i = 1; i < a.length; i++) {
             Complex curUp = a[i].plus(b[i].conjugate()).divides(new Complex(2, 0));
@@ -488,7 +487,7 @@ public class Fourier {
 
             // (U(p)V(p)*-V(p)U(p)*) must be biggest value
             if (curDet.abs() > Det.abs()) {
-//                p = i;
+                p = i;
                 UpStar = curUpStar;
                 VpStar = curVpStar;
                 Det = curDet;

@@ -36,12 +36,15 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 23.06.13 16:47
+ * Updated: 07.08.13 12:18
  */
 
 package net.semanticmetadata.lire.imageanalysis;
 
+import net.semanticmetadata.lire.DocumentBuilder;
+import net.semanticmetadata.lire.utils.ImageUtils;
 import net.semanticmetadata.lire.utils.MetricsUtils;
+import net.semanticmetadata.lire.utils.SerializationUtils;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
@@ -80,22 +83,26 @@ public class OpponentHistogram extends Histogram implements LireFeature {
 
     double tmpVal, tmpSum;
 
+    byte[] histogram = new byte[64];
+
     @Override
     public void extract(BufferedImage bimg) {
+        // check if it's (i) RGB and (ii) 8 bits per pixel.
+        bimg = ImageUtils.get8BitRGBImage(bimg);
         // extract:
         double[] histogram = new double[64];
         for (int i = 0; i < histogram.length; i++) {
             histogram[i] = 0;
         }
         WritableRaster raster = bimg.getRaster();
-        int[] px = new int[3];
+        int[] px = new int[3*(raster.getHeight()-2)];
         int colorPos;
         for (int x = 1; x < raster.getWidth() - 1; x++) {
-            for (int y = 1; y < raster.getHeight() - 1; y++) {
-                raster.getPixel(x, y, px);
-                o1 = (double) (px[0] - px[1]) / sq2;
-                o2 = (double) (px[0] + px[1] - 2 * px[2]) / sq6;
-                o3 = (double) (px[0] + px[1] + px[2]) / sq3;
+            raster.getPixels(x, 1, 1, raster.getHeight()-2, px);
+            for (int y = 0; y < raster.getHeight() - 2; y++) {
+                o1 = (double) (px[y*3] - px[y*3+1]) / sq2;
+                o2 = (double) (px[y*3] + px[y*3+1] - 2 * px[y*3+2]) / sq6;
+                o3 = (double) (px[y*3] + px[y*3+1] + px[y*3+2]) / sq3;
                 // Normalize ... easier to handle.
                 o1 = (o1 + 255d / sq2) / (510d / sq2);
                 o2 = (o2 + 510d / sq6) / (1020d / sq6);
@@ -106,52 +113,61 @@ public class OpponentHistogram extends Histogram implements LireFeature {
             }
         }
         // normalize with max norm & quantize to [0,127]:
-        descriptor = new double[64];
         double max = 0;
         for (int i = 0; i < histogram.length; i++) {
             max = Math.max(histogram[i], max);
         }
         for (int i = 0; i < histogram.length; i++) {
-            descriptor[i] = Math.floor(127d * (histogram[i] / max));
+            this.histogram[i] = (byte) Math.floor(127d * (histogram[i] / max));
         }
     }
 
     public byte[] getByteArrayRepresentation() {
-        byte[] result = new byte[descriptor.length];
+        byte[] result = new byte[histogram.length];
         for (int i = 0; i < result.length; i++) {
-            result[i] = (byte) descriptor[i];
+            result[i] = histogram[i];
         }
         return result;
     }
 
     public void setByteArrayRepresentation(byte[] in) {
-        descriptor = new double[in.length];
-        for (int i = 0; i < descriptor.length; i++) {
-            descriptor[i] = in[i];
+        for (int i = 0; i < histogram.length; i++) {
+            histogram[i] = in[i];
         }
     }
 
     public void setByteArrayRepresentation(byte[] in, int offset, int length) {
-        descriptor = new double[length];
-        for (int i = offset; i < length; i++) {
-            descriptor[i] = in[i];
+        for (int i = 0; i < length; i++) {
+            histogram[i] = in[i+offset];
         }
     }
 
     public double[] getDoubleHistogram() {
-        return descriptor;
+        return SerializationUtils.castToDoubleArray(histogram);
     }
 
     public float getDistance(LireFeature feature) {
         if (!(feature instanceof OpponentHistogram))
             throw new UnsupportedOperationException("Wrong descriptor.");
-        return (float) MetricsUtils.jsd(((OpponentHistogram) feature).descriptor, descriptor);
+        return (float) MetricsUtils.jsd(((OpponentHistogram) feature).histogram, histogram);
     }
 
     public double getDistance(byte[] h1, byte[] h2) {
         return getDistance(h1, 0, h1.length, h2, 0, h2.length);
     }
 
+    /**
+     * Jeffrey Divergence or Jensen-Shannon divergence (JSD) from
+     * Deselaers, T.; Keysers, D. & Ney, H. Features for image retrieval:
+     * an experimental comparison Inf. Retr., Kluwer Academic Publishers, 2008, 11, 77-107
+     * @param h1
+     * @param offset1
+     * @param length1
+     * @param h2
+     * @param offset2
+     * @param length2
+     * @return
+     */
     public double getDistance(byte[] h1, int offset1, int length1, byte[] h2, int offset2, int length2) {
 //        double sum = 0f;
 //        for (int i = 0; i < h1.length; i++) {
@@ -169,12 +185,12 @@ public class OpponentHistogram extends Histogram implements LireFeature {
     }
 
     public String getStringRepresentation() {
-        StringBuilder sb = new StringBuilder(descriptor.length * 2 + 25);
+        StringBuilder sb = new StringBuilder(histogram.length * 2 + 25);
         sb.append("ophist");
         sb.append(' ');
-        sb.append(descriptor.length);
+        sb.append(histogram.length);
         sb.append(' ');
-        for (double aData : descriptor) {
+        for (double aData : histogram) {
             sb.append((int) aData);
             sb.append(' ');
         }
@@ -185,12 +201,21 @@ public class OpponentHistogram extends Histogram implements LireFeature {
         StringTokenizer st = new StringTokenizer(s);
         if (!st.nextToken().equals("ophist"))
             throw new UnsupportedOperationException("This is not a OpponentHistogram descriptor.");
-        descriptor = new double[Integer.parseInt(st.nextToken())];
-        for (int i = 0; i < descriptor.length; i++) {
+        for (int i = 0; i < histogram.length; i++) {
             if (!st.hasMoreTokens())
                 throw new IndexOutOfBoundsException("Too few numbers in string representation.");
-            descriptor[i] = Integer.parseInt(st.nextToken());
+            histogram[i] = (byte) Integer.parseInt(st.nextToken());
         }
 
+    }
+
+    @Override
+    public String getFeatureName() {
+        return "OpponentHistogram";
+    }
+
+    @Override
+    public String getFieldName() {
+        return DocumentBuilder.FIELD_NAME_OPPONENT_HISTOGRAM;
     }
 }

@@ -15,30 +15,13 @@ docs:
 http://www.semanticmetadata.net/wiki/doku.php?id=lire:lire
 
 Acknowledgements
-Iï¿½d like to thank the numerous people having contributed
+I’d like to thank the numerous people having contributed
 code to Lire or having published their work as open source
 allowing integration into LIRe: Savvas A. Chatzichristofis,
 Manuel Oraze, Lukas Esterle, Roman Kern, Roman Divotkey,
-Katharina Tomanec, Fabrizio Falchi, Bastian Hï¿½sch, Janine
+Katharina Tomanec, Fabrizio Falchi, Bastian Hösch, Janine
 Lachner, Marko Keuschnig, Christian Penz and Benjamin
 Sznajder.
 
 - Mathias Lux, Klagenfurt, 2008-06-08
   http://www.SemanticMetadata.net
-  
-
-Changes from the original code at GoogleCode Repository
-=======================================================
-
-The following changes have been made from the original repo
-on Google Code (http://code.google.com/p/lire). Hopefully,
-these will make into the original repo some day.
-
-With github commit: 799b2a09f6846f711bde3bd0108e0e5b65f28cca
-
- * Mavenization of the project
- * Removed all warnings of resource leaks
- * Implemented type-safety by using generics than raw types
- * Upgraded Lucene code to not use deprecated methods
-
-- Sandeep Gupta (twitter.com/sangupta)

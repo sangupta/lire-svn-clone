@@ -567,10 +567,7 @@ public class ScalableColorImpl {
     // von XM ... :)
     private static void histo_3d_hirarch_16_5(int[][] tabelle, int tablae, int[] histogram,
                                               int h_size, int s_size, int v_size, int hist_nr) {
-        
-    	@SuppressWarnings("unused")
-    	int i, j, sum, dif, x1, y1, x2, y2;
-    	
+        int i, j, sum, dif, x1, y1, x2, y2;
         int[][] matrix = new int[16][16];
         int iprint = 0;
 
@@ -649,11 +646,7 @@ public class ScalableColorImpl {
 
     // kopiert von XM ... :)
     private int[] HaarTransform(int[] aHist) {
-        int index, tablae = 255, hist_nr;
-        
-        @SuppressWarnings("unused")
-        int iwert;
-        
+        int index, tablae = 255, iwert, hist_nr;
         int[] histogram_in, histogram_out;
         int RecHistogram = 0;
         int h_size, s_size, v_size, max_color = 256;

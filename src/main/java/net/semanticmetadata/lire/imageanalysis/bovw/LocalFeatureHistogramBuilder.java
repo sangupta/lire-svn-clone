@@ -32,22 +32,25 @@
  * URL: http://www.morganclaypool.com/doi/abs/10.2200/S00468ED1V01Y201301ICR025
  *
  * Copyright statement:
- * --------------------
+ * ====================
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
- *     http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *
+ * Updated: 11.07.13 11:21
  */
 package net.semanticmetadata.lire.imageanalysis.bovw;
 
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.clustering.Cluster;
 import net.semanticmetadata.lire.clustering.KMeans;
+import net.semanticmetadata.lire.clustering.ParallelKMeans;
 import net.semanticmetadata.lire.imageanalysis.Histogram;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
 import net.semanticmetadata.lire.utils.LuceneUtils;
 import net.semanticmetadata.lire.utils.SerializationUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
-import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.StringField;
 import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.*;
 import org.apache.lucene.util.Bits;
@@ -81,6 +84,7 @@ public abstract class LocalFeatureHistogramBuilder {
     protected String localFeatureHistFieldName = DocumentBuilder.FIELD_NAME_SURF_LOCAL_FEATURE_HISTOGRAM;
     protected String clusterFile = "./clusters.dat";
     public static boolean DELETE_LOCAL_FEATURES = true;
+    private boolean useParallelClustering = true;
 
 
     public LocalFeatureHistogramBuilder(IndexReader reader) {
@@ -127,7 +131,9 @@ public abstract class LocalFeatureHistogramBuilder {
         df.setMaximumFractionDigits(3);
         // find the documents for building the vocabulary:
         HashSet<Integer> docIDs = selectVocabularyDocs();
-        KMeans k = new KMeans(numClusters);
+        KMeans k;
+        if (useParallelClustering) k = new ParallelKMeans(numClusters);
+        else k = new KMeans(numClusters);
         // fill the KMeans object:
         LinkedList<double[]> features = new LinkedList<double[]>();
         // Needed for check whether the document is deleted.
@@ -150,7 +156,7 @@ public abstract class LocalFeatureHistogramBuilder {
             pm.setProgress(5);
             pm.setNote("Starting clustering");
         }
-        if (features.size() < numClusters) {
+        if (k.getFeatureCount() < numClusters) {
             // this cannot work. You need more data points than clusters.
             throw new UnsupportedOperationException("Only " + features.size() + " features found to cluster in " + numClusters + ". Try to use less clusters or more images.");
         }
@@ -202,7 +208,7 @@ public abstract class LocalFeatureHistogramBuilder {
         //  create & store histograms:
         System.out.println("Creating histograms ...");
         time = System.currentTimeMillis();
-//        int[] tmpHist = new int[numClusters];
+        int[] tmpHist = new int[numClusters];
         IndexWriter iw = LuceneUtils.createIndexWriter(((DirectoryReader) reader).directory(), true, LuceneUtils.AnalyzerType.WhitespaceAnalyzer, 256d);
         if (pm != null) { // set to 50 of 100 after clustering.
             pm.setProgress(50);
@@ -232,15 +238,17 @@ public abstract class LocalFeatureHistogramBuilder {
         }
         if (pm != null) { // set to 50 of 100 after clustering.
             pm.setProgress(95);
-            pm.setNote("Indexing finished");
+            pm.setNote("Indexing finished, optimizing index now.");
         }
 
         System.out.println(getDuration(time));
         iw.commit();
+        // this one does the "old" commit(), it removes the deleted SURF features.
+        iw.forceMerge(1);
         iw.close();
         if (pm != null) { // set to 50 of 100 after clustering.
             pm.setProgress(100);
-            pm.setNote("Indexing finished");
+            pm.setNote("Indexing & optimization finished");
             pm.close();
         }
         System.out.println("Finished.");
@@ -254,7 +262,9 @@ public abstract class LocalFeatureHistogramBuilder {
         System.out.println("Creating histograms ...");
         int[] tmpHist = new int[numClusters];
         LireFeature f = getFeatureInstance();
-        IndexWriter iw = LuceneUtils.createIndexWriter(((DirectoryReader) reader).directory(), true, LuceneUtils.AnalyzerType.WhitespaceAnalyzer);
+        // based on bug report from Einav Itamar <einavitamar@gmail.com>
+        IndexWriter iw = LuceneUtils.createIndexWriter(((DirectoryReader) reader).directory(),
+                false, LuceneUtils.AnalyzerType.WhitespaceAnalyzer);
         for (int i = 0; i < reader.maxDoc(); i++) {
 //            if (!reader.isDeleted(i)) {
             for (int j = 0; j < tmpHist.length; j++) {
@@ -269,8 +279,9 @@ public abstract class LocalFeatureHistogramBuilder {
                     f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
                     tmpHist[clusterForFeature((Histogram) f)]++;
                 }
-                d.add(new Field(visualWordsFieldName, arrayToVisualWordString(tmpHist), TextField.TYPE_STORED));
-                d.add(new StoredField(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist)));
+                normalize(tmpHist);
+                d.add(new TextField(visualWordsFieldName, arrayToVisualWordString(tmpHist), Field.Store.YES));
+                d.add(new StringField(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist), Field.Store.YES));
                 // now write the new one. we use the identifier to update ;)
                 iw.updateDocument(new Term(DocumentBuilder.FIELD_NAME_IDENTIFIER, d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]), d);
             }
@@ -298,10 +309,21 @@ public abstract class LocalFeatureHistogramBuilder {
             f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
             tmpHist[clusterForFeature((Histogram) f)]++;
         }
-        d.add(new Field(visualWordsFieldName, arrayToVisualWordString(tmpHist), TextField.TYPE_STORED));
-        d.add(new StoredField(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist)));
+        normalize(tmpHist);
+        d.add(new TextField(visualWordsFieldName, arrayToVisualWordString(tmpHist), Field.Store.YES));
+        d.add(new StringField(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist), Field.Store.YES));
         d.removeFields(localFeatureFieldName);
         return d;
+    }
+
+    private void normalize(int[] histogram) {
+        int max = 0;
+        for (int i = 0; i < histogram.length; i++) {
+            max = Math.max(max, histogram[i]);
+        }
+        for (int i = 0; i < histogram.length; i++) {
+            histogram[i] = (int) Math.floor(((double) histogram[i] * 15d) / (double) max);
+        }
     }
 
     /**
@@ -400,8 +422,9 @@ public abstract class LocalFeatureHistogramBuilder {
                         f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
                         tmpHist[clusterForFeature((Histogram) f)]++;
                     }
-                    d.add(new Field(visualWordsFieldName, arrayToVisualWordString(tmpHist), TextField.TYPE_STORED));
-                    d.add(new Field(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist), TextField.TYPE_STORED));
+                    normalize(tmpHist);
+                    d.add(new TextField(visualWordsFieldName, arrayToVisualWordString(tmpHist), Field.Store.YES));
+                    d.add(new StringField(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist), Field.Store.YES));
 
                     // remove local features to save some space if requested:
                     if (DELETE_LOCAL_FEATURES) {
@@ -431,5 +454,23 @@ public abstract class LocalFeatureHistogramBuilder {
 
     public void setProgressMonitor(ProgressMonitor pm) {
         this.pm = pm;
+    }
+
+    /**
+     * Indicates whether parallel k-means is applied (true) or just the
+     * single threaded implementation (false)
+     * @return true is parallel k-means
+     */
+    public boolean getUseParallelClustering() {
+        return useParallelClustering;
+    }
+
+    /**
+     * Indicates whether parallel k-means is applied (true) or just the
+     * single threaded implementation (false)
+     * @param useParallelClustering set to true if parallel processing should be used.
+     */
+    public void setUseParallelClustering(boolean useParallelClustering) {
+        this.useParallelClustering = useParallelClustering;
     }
 }

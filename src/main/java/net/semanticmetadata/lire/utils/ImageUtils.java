@@ -32,16 +32,24 @@
  * URL: http://www.morganclaypool.com/doi/abs/10.2200/S00468ED1V01Y201301ICR025
  *
  * Copyright statement:
- * --------------------
+ * ====================
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
- *     http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *
+ * Updated: 13.09.13 18:35
  */
 
 package net.semanticmetadata.lire.utils;
 
+import javax.imageio.ImageIO;
 import java.awt.*;
+import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
+import java.awt.image.ConvolveOp;
+import java.awt.image.Kernel;
 import java.awt.image.WritableRaster;
+import java.io.FileOutputStream;
+import java.io.IOException;
 
 /**
  * Some little helper methods.<br>
@@ -57,7 +65,7 @@ public class ImageUtils {
      *
      * @param image         the image to scale down. It remains untouched.
      * @param maxSideLength the maximum side length of the scaled down instance. Has to be > 0.
-     * @return the scaled image, the
+     * @return the scaled image if the original image is bigger than the scaled version, the original instance otherwise.
      */
     public static BufferedImage scaleImage(BufferedImage image, int maxSideLength) {
         assert (maxSideLength > 0);
@@ -70,13 +78,16 @@ public class ImageUtils {
             scaleFactor = ((double) maxSideLength / originalHeight);
         }
         // create new image
-        BufferedImage img = new BufferedImage((int) (originalWidth * scaleFactor), (int) (originalHeight * scaleFactor), BufferedImage.TYPE_INT_RGB);
-        // fast scale (Java 1.4 & 1.5)
-        Graphics g = img.getGraphics();
+        if (scaleFactor < 1) {
+            BufferedImage img = new BufferedImage((int) (originalWidth * scaleFactor), (int) (originalHeight * scaleFactor), BufferedImage.TYPE_INT_RGB);
+            // fast scale (Java 1.4 & 1.5)
+            Graphics g = img.getGraphics();
 //        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
-        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-        g.drawImage(image, 0, 0, img.getWidth(), img.getHeight(), null);
-        return img;
+            ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+            g.drawImage(image, 0, 0, img.getWidth(), img.getHeight(), null);
+            return img;
+        } else
+            return image;
     }
 
     /**
@@ -112,7 +123,7 @@ public class ImageUtils {
      *
      * @param image
      */
-    public static BufferedImage convertImageToGrey(BufferedImage image) {
+    public static BufferedImage getGrayscaleImage(BufferedImage image) {
         BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
         result.getGraphics().drawImage(image, 0, 0, null);
         return result;
@@ -126,7 +137,7 @@ public class ImageUtils {
     public static void invertImage(BufferedImage image) {
         WritableRaster inRaster = image.getRaster();
         int[] p = new int[3];
-//        float v = 0;
+        float v = 0;
         for (int x = 0; x < inRaster.getWidth(); x++) {
             for (int y = 0; y < inRaster.getHeight(); y++) {
                 inRaster.getPixel(x, y, p);
@@ -157,7 +168,7 @@ public class ImageUtils {
     }
 
     /**
-     * Trims the white (and respective the black) border around an image.
+     * Trims the white border around an image.
      *
      * @param img
      * @return a new image, hopefully trimmed.
@@ -165,77 +176,155 @@ public class ImageUtils {
     public static BufferedImage trimWhiteSpace(BufferedImage img) {
         // idea is to scan lines of an image starting from each side.
         // As soon as a scan line encounters non-white (or non-black) pixels we know there is actual image content.
-        WritableRaster raster = img.getRaster();
-        boolean hasWhite = true;
-        int ymin = 0, ymax = raster.getHeight() - 1, xmin = 0, xmax = raster.getWidth() - 1;
-        int[] pixels = new int[3 * raster.getWidth()];
-        int thresholdWhite = 250;
-        int thresholdBlack = 5;
-        while (hasWhite) {
-            raster.getPixels(0, ymin, raster.getWidth(), 1, pixels);
-            for (int i = 0; i < pixels.length; i++) {
-                if (pixels[i] < thresholdWhite && pixels[i] > thresholdBlack) hasWhite = false;
+        WritableRaster raster = getGrayscaleImage(img).getRaster();
+        int[] pixels = new int[Math.max(raster.getWidth(), raster.getHeight())];
+        int thresholdWhite = 253;
+        int trimTop = 0, trimBottom = 0, trimLeft = 0, trimRight = 0;
+        boolean white = true;
+        while (white) {
+            raster.getPixels(0, trimTop, raster.getWidth(), 1, pixels);
+            for (int i = 0; i < raster.getWidth(); i++) {
+                if (pixels[i] < thresholdWhite) white = false;
             }
-            if (hasWhite) ymin++;
-        }
-        hasWhite = true;
-        while (hasWhite && ymax > ymin) {
-            raster.getPixels(0, ymax, raster.getWidth(), 1, pixels);
-            for (int i = 0; i < pixels.length; i++) {
-                if (pixels[i] < thresholdWhite && pixels[i] > thresholdBlack) hasWhite = false;
+            if (white) {
+                trimTop++;
+                // handling white only images ..
+                if (trimTop > raster.getHeight() - 10) {
+                    return img;
+                }
             }
-            if (hasWhite) ymax--;
         }
-        pixels = new int[3 * raster.getHeight()];
-        hasWhite = true;
-        while (hasWhite) {
-            raster.getPixels(xmin, 0, 1, raster.getHeight(), pixels);
-            for (int i = 0; i < pixels.length; i++) {
-                if (pixels[i] < thresholdWhite && pixels[i] > thresholdBlack) hasWhite = false;
+        // bottom:
+        white = true;
+        while (white) {
+            raster.getPixels(0, raster.getHeight() - 1 - trimBottom, raster.getWidth(), 1, pixels);
+            for (int i = 0; i < raster.getWidth(); i++) {
+                if (pixels[i] < thresholdWhite) white = false;
             }
-            if (hasWhite) xmin++;
-        }
-        hasWhite = true;
-        while (hasWhite && xmax > xmin) {
-            raster.getPixels(xmax, 0, 1, raster.getHeight(), pixels);
-            for (int i = 0; i < pixels.length; i++) {
-                if (pixels[i] < thresholdWhite && pixels[i] > thresholdBlack) hasWhite = false;
+            if (white) {
+                trimBottom++;
             }
-            if (hasWhite) xmax--;
         }
-        BufferedImage result = new BufferedImage(xmax - xmin, ymax - ymin, BufferedImage.TYPE_INT_RGB);
-        result.getGraphics().drawImage(img, 0, 0, result.getWidth(), result.getHeight(),
-                xmin, ymin, xmax, ymax, null);
+        // left:
+        white = true;
+        while (white) {
+            raster.getPixels(trimLeft, 0, 1, raster.getHeight(), pixels);
+            for (int i = 0; i < raster.getHeight(); i++) {
+                if (pixels[i] < thresholdWhite) white = false;
+            }
+            if (white) {
+                trimLeft++;
+            }
+        }
+        // left:
+        white = true;
+        while (white) {
+            raster.getPixels(raster.getWidth() - 1 - trimRight, 0, 1, raster.getHeight(), pixels);
+            for (int i = 0; i < raster.getHeight(); i++) {
+                if (pixels[i] < thresholdWhite) white = false;
+            }
+            if (white) {
+                trimRight++;
+            }
+        }
+//        System.out.println("trimTop = " + trimTop);
+//        System.out.println("trimBottom = " + trimBottom);
+//        System.out.println("trimLeft = " + trimLeft);
+//        System.out.println("trimRight = " + trimRight);
+        BufferedImage result = new BufferedImage(raster.getWidth() - (trimLeft + trimRight), raster.getHeight() - (trimTop + trimBottom), BufferedImage.TYPE_INT_RGB);
+        result.getGraphics().drawImage(img, 0, 0, result.getWidth(), result.getHeight(), trimLeft, trimTop, img.getWidth() - trimRight, img.getHeight() - trimBottom, null);
         return result;
     }
 
-    /** creates a Gaussian kernel for ConvolveOp for blurring an image
+    /**
+     * creates a Gaussian kernel for ConvolveOp for blurring an image
      *
      * @param radius the radius, i.e. 5
      * @param sigma  sigma, i.e. 1.4f
      * @return
      */
     public static float[] makeGaussianKernel(int radius, float sigma) {
-            float[] kernel = new float[radius * radius];
-            float sum = 0;
-            
-            float twiceOfSigmaSquare = 2 * (sigma * sigma);
-            
-            for (int y = 0; y < radius; y++) {
-                for (int x = 0; x < radius; x++) {
-                    int off = y * radius + x;
-                    int xx = x - radius / 2;
-                    int yy = y - radius / 2;
-                    kernel[off] = (float) Math.pow(Math.E, -(xx * xx + yy * yy) / twiceOfSigmaSquare);
-                    sum += kernel[off];
-                }
+        float[] kernel = new float[radius * radius];
+        float sum = 0;
+        for (int y = 0; y < radius; y++) {
+            for (int x = 0; x < radius; x++) {
+                int off = y * radius + x;
+                int xx = x - radius / 2;
+                int yy = y - radius / 2;
+                kernel[off] = (float) Math.pow(Math.E, -(xx * xx + yy * yy)
+                        / (2 * (sigma * sigma)));
+                sum += kernel[off];
             }
-            
-            for (int i = 0; i < kernel.length; i++) {
-                kernel[i] /= sum;
+        }
+        for (int i = 0; i < kernel.length; i++)
+            kernel[i] /= sum;
+        return kernel;
+    }
+
+    public static BufferedImage differenceOfGaussians(BufferedImage image) {
+        BufferedImage img1 = getGrayscaleImage(image);
+        BufferedImage img2 = getGrayscaleImage(image);
+
+        ConvolveOp gaussian1 = new ConvolveOp(new Kernel(5, 5, ImageUtils.makeGaussianKernel(5, 1.0f)));
+        ConvolveOp gaussian2 = new ConvolveOp(new Kernel(5, 5, ImageUtils.makeGaussianKernel(5, 2.0f)));
+
+        img1 = gaussian1.filter(img1, null);
+        img2 = gaussian2.filter(img2, null);
+
+        WritableRaster r1 = img1.getRaster();
+        WritableRaster r2 = img2.getRaster();
+        int[] tmp1 = new int[3];
+        int[] tmp2 = new int[3];
+        for (int x = 0; x < img1.getWidth(); x++) {
+            for (int y = 0; y < img1.getHeight(); y++) {
+                r1.getPixel(x, y, tmp1);
+                r2.getPixel(x, y, tmp2);
+                tmp1[0] = Math.abs(tmp1[0]-tmp2[0]);
+                // System.out.println("tmp1 = " + tmp1[0]);
+                if (tmp1[0]>5) tmp1[0] =255;
+                r1.setPixel(x, y, tmp1);
             }
-            
-            return kernel;
+        }
+        return img1;
+    }
+
+    /**
+     * Converts an image (RGB, RGBA, ... whatever) to a binary one based on given threshold
+     *
+     * @param image     the image to convert. Remains untouched.
+     * @param threshold the threshold in [0,255]
+     * @return a new BufferedImage instance of TYPE_BYTE_GRAY with only 0'S and 255's
+     */
+    public static BufferedImage thresholdImage(BufferedImage image, int threshold) {
+        BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_BYTE_GRAY);
+        result.getGraphics().drawImage(image, 0, 0, null);
+        WritableRaster raster = result.getRaster();
+        int[] pixels = new int[image.getWidth()];
+        for (int y = 0; y < image.getHeight(); y++) {
+            raster.getPixels(0, y, image.getWidth(), 1, pixels);
+            for (int i = 0; i < pixels.length; i++) {
+                if (pixels[i] < threshold) pixels[i] = 0;
+                else pixels[i] = 255;
+            }
+            raster.setPixels(0, y, image.getWidth(), 1, pixels);
+        }
+        return result;
+    }
+
+    /**
+     * Check if the image is fail safe for color based features that are actually using 8 bits per pixel RGB.
+     *
+     * @param bufferedImage
+     * @return
+     */
+    public static BufferedImage get8BitRGBImage(BufferedImage bufferedImage) {
+        // check if it's (i) RGB and (ii) 8 bits per pixel.
+        if (bufferedImage.getType() != ColorSpace.TYPE_RGB || bufferedImage.getSampleModel().getSampleSize(0) != 8) {
+            BufferedImage img = new BufferedImage(bufferedImage.getWidth(), bufferedImage.getHeight(), BufferedImage.TYPE_INT_RGB);
+            img.getGraphics().drawImage(bufferedImage, 0, 0, null);
+            bufferedImage = img;
+        }
+        return bufferedImage;
     }
 
 }

@@ -181,10 +181,7 @@ public class HashingTest extends TestCase {
                 DocumentBuilder.FIELD_NAME_PHOG + "_hash", new PHOG(), 500);
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File("E:\\wipo1m-idx")));
         Document queryDoc = reader.document(1);
-        
-        @SuppressWarnings("unused")
-        ImageSearchHits search = is.search(queryDoc, reader);
-        
+        ImageSearchHits search = is.search(queryDoc, reader);;
         long ms = System.currentTimeMillis();
         int runs = 50;
         for (int i = 0; i<runs; i++)

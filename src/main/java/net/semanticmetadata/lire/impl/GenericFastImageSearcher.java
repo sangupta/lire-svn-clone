@@ -36,7 +36,7 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 23.06.13 18:37
+ * Updated: 11.07.13 11:12
  */
 package net.semanticmetadata.lire.impl;
 
@@ -78,6 +78,14 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
     protected TreeSet<SimpleResult> docs;
     private float maxDistance;
 
+    /**
+     * Creates a new ImageSearcher for the given feature.
+     *
+     * @param maxHits         the maximum number of hits
+     * @param descriptorClass the feature class. It has to implement {@link LireFeature}
+     * @param fieldName       a custom field name for the index.
+     * @see LireFeature
+     */
     public GenericFastImageSearcher(int maxHits, Class<?> descriptorClass, String fieldName) {
         this.maxHits = maxHits;
         docs = new TreeSet<SimpleResult>();
@@ -90,6 +98,28 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
         } catch (IllegalAccessException e) {
             logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
         }
+        init();
+    }
+
+    /**
+     * Creates a new ImageSearcher for the given feature.
+     *
+     * @param maxHits         the maximum number of hits
+     * @param descriptorClass the feature class. It has to implement {@link LireFeature}
+     * @see LireFeature
+     */
+    public GenericFastImageSearcher(int maxHits, Class<?> descriptorClass) {
+        this.maxHits = maxHits;
+        docs = new TreeSet<SimpleResult>();
+        this.descriptorClass = descriptorClass;
+        try {
+            this.cachedInstance = (LireFeature) this.descriptorClass.newInstance();
+        } catch (InstantiationException e) {
+            logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
+        }
+        this.fieldName = cachedInstance.getFieldName();
         init();
     }
 
@@ -111,6 +141,15 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
         }
     }
 
+    /**
+     * Creates a n ImageSearcher for the given feature. If isCaching is set to true, the features will be hold in memory,
+     * which speeds up search significantly. However, this takes sometimes a lot of memory, so use it carefully.
+     * @param maxHits  the maximum number of hits
+     * @param descriptorClass  the feature class. It has to implement {@link LireFeature}
+     * @param fieldName a custom field name for the index.
+     * @param isCaching set to true if you want to search in-memory.
+     * @param reader the IndexReader used for accessing the index.
+     */
     public GenericFastImageSearcher(int maxHits, Class<?> descriptorClass, String fieldName, boolean isCaching, IndexReader reader) {
         this.isCaching = isCaching;
         this.maxHits = maxHits;
@@ -125,6 +164,31 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
             logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
         }
         this.reader = reader;
+        init();
+    }
+
+    /**
+     * Creates a n ImageSearcher for the given feature. If isCaching is set to true, the features will be hold in memory,
+     * which speeds up search significantly. However, this takes sometimes a lot of memory, so use it carefully.
+     * @param maxHits   the maximum number of hits
+     * @param descriptorClass the feature class. It has to implement {@link LireFeature}
+     * @param isCaching
+     * @param reader reader the IndexReader used for accessing the index.
+     */
+    public GenericFastImageSearcher(int maxHits, Class<?> descriptorClass, boolean isCaching, IndexReader reader) {
+        this.isCaching = isCaching;
+        this.maxHits = maxHits;
+        docs = new TreeSet<SimpleResult>();
+        this.descriptorClass = descriptorClass;
+        try {
+            this.cachedInstance = (LireFeature) this.descriptorClass.newInstance();
+        } catch (InstantiationException e) {
+            logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
+        }
+        this.reader = reader;
+        this.fieldName = cachedInstance.getFieldName();
         init();
     }
 
@@ -170,6 +234,7 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
         float tmpDistance;
         int docs = reader.numDocs();
         if (!isCaching) {
+            // we read each and every document from the index and then we compare it to the query.
             for (int i = 0; i < docs; i++) {
                 if (reader.hasDeletions() && !liveDocs.get(i)) continue; // if it is deleted, just ignore it.
 
@@ -195,6 +260,7 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
                 }
             }
         } else {
+            // we use the in-memory cache to find the matching docs from the index.
             int count = 0;
             for (Iterator<byte[]> iterator = featureCache.iterator(); iterator.hasNext(); ) {
                 cachedInstance.setByteArrayRepresentation(iterator.next());
@@ -202,7 +268,6 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
                     count++;
                     continue; // if it is deleted, just ignore it.
                 } else {
-//                    cachedInstance.setByteArrayRepresentation(next);
                     tmpDistance = lireFeature.getDistance(cachedInstance);
                     assert (tmpDistance >= 0);
                     // if it is the first document:

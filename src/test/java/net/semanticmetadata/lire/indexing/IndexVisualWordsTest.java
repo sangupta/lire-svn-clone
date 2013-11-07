@@ -146,7 +146,6 @@ public class IndexVisualWordsTest extends TestCase {
     }
 
     public void testStrings() {
-    	@SuppressWarnings("unused")
         ProgressMonitor pm = new ProgressMonitor(null, "", "", 0, 100);
         System.out.println(String.format("%02d:%02d", 3, 5));
     }

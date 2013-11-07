@@ -36,19 +36,18 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 11.05.13 10:52
+ * Updated: 12.07.13 16:56
  */
 
 package net.semanticmetadata.lire.imageanalysis;
 
-import net.semanticmetadata.lire.utils.ImageUtils;
+import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.utils.MetricsUtils;
+import net.semanticmetadata.lire.utils.SerializationUtils;
 
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
-import java.awt.image.ConvolveOp;
-import java.awt.image.Kernel;
 
 /**
  * The PHOG descriptor is described in Anna Bosch, Andrew Zisserman & Xavier Munoz (2007) "Representing shape with a
@@ -57,23 +56,23 @@ import java.awt.image.Kernel;
  * @author Mathias Lux, mathias@juggle.at, 05.04.13
  */
 public class PHOG implements LireFeature {
-    static ConvolveOp sobelX = new ConvolveOp(new Kernel(3, 3, new float[]{1, 0, -1, 2, 0, -2, 1, 0, -1}));
-    static ConvolveOp sobelY = new ConvolveOp(new Kernel(3, 3, new float[]{1, 2, 1, 0, 0, 0, -1, -2, -1}));
-    static ConvolveOp gaussian = new ConvolveOp(new Kernel(5, 5, ImageUtils.makeGaussianKernel(5, 1.4f)));
     static ColorConvertOp grayscale = new ColorConvertOp(ColorSpace.getInstance(ColorSpace.CS_GRAY), null);
     int[] tmp255 = {255};
     int[] tmp128 = {128};
     int[] tmp000 = {0};
     int[] tmpPixel = {0};
+    int tmp;
     // double thresholds for Canny edge detector
-    double thresholdLow = 80, thresholdHigh = 100;
+    double thresholdLow = 60, thresholdHigh = 100;
 
     // And now for PHOG:
     public static int bins = 30;
-    double[] histogram = new double[bins + 4*bins + 4*4*bins];
+    double[] tmpHistogram;
+    byte[] histogram = new byte[bins + 4*bins + 4*4*bins];
 //    double[] histogram = new double[5 * bins + 4*4*bins + 4*4*4*bins];
     // used to quantize bins to [0, quantizationFactor]
-    private double quantizationFactor = 63d;
+    // Note that a quantization factor of 127d has better precision, but is not supported by the current serialization method.
+    private double quantizationFactor = 15d;
 
 
     public void extract(BufferedImage bimg) {
@@ -104,7 +103,8 @@ public class PHOG implements LireFeature {
                 } else {
                     gd[x][y] = Math.PI / 2d;
                 }
-                gm[x][y] = Math.hypot(gy[x][y], gx[x][y]);
+                gm[x][y] = Math.sqrt(gy[x][y]*gy[x][y] + gx[x][y]*gx[x][y]);
+//                gm[x][y] = Math.hypot(gy[x][y], gx[x][y]);
             }
         }
         // Non-maximum suppression
@@ -124,12 +124,12 @@ public class PHOG implements LireFeature {
                     else
                         gray.getRaster().setPixel(x, y, tmp255);
                 } else if (gd[x][y] < (3d * Math.PI / 8d) && gd[x][y] >= (Math.PI / 8d)) {
-                    if (gm[x][y] > gm[x - 1][y - 1] && gm[x][y] > gm[x - 1][y - 1])
+                    if (gm[x][y] > gm[x - 1][y - 1] && gm[x][y] > gm[x + 1][y + 1])
                         setPixel(x, y, gray, gm[x][y]);
                     else
                         gray.getRaster().setPixel(x, y, tmp255);
                 } else if (gd[x][y] < (-3d * Math.PI / 8d) || gd[x][y] >= (3d * Math.PI / 8d)) {
-                    if (gm[x][y] > gm[x][y + 1] && gm[x][y] > gm[x][y + 1])
+                    if (gm[x][y] > gm[x][y + 1] && gm[x][y] > gm[x][y - 1])
                         setPixel(x, y, gray, gm[x][y]);
                     else
                         gray.getRaster().setPixel(x, y, tmp255);
@@ -163,20 +163,20 @@ public class PHOG implements LireFeature {
         }
 
         // Canny Edge Detection over ... lets go for the PHOG ...
-        histogram = new double[bins + 4*bins + 4*4*bins];
+        tmpHistogram = new double[bins + 4*bins + 4*4*bins];
         // for level 3:
 //        histogram = new double[5 * bins + 4*4*bins + 4*4*4*bins];
         //level0
-        System.arraycopy(getHistogram(0, 0, width, height, gray, gd), 0, histogram, 0, bins);
+        System.arraycopy(getHistogram(0, 0, width, height, gray, gd), 0, tmpHistogram, 0, bins);
         //level1
         System.arraycopy(getHistogram(0, 0, width / 2, height / 2, gray, gd),
-                0, histogram, bins, bins);
+                0, tmpHistogram, bins, bins);
         System.arraycopy(getHistogram(width / 2, 0, width / 2, height / 2, gray, gd),
-                0, histogram, 2 * bins, bins);
+                0, tmpHistogram, 2 * bins, bins);
         System.arraycopy(getHistogram(0, height / 2, width / 2, height / 2, gray, gd),
-                0, histogram, 3 * bins, bins);
+                0, tmpHistogram, 3 * bins, bins);
         System.arraycopy(getHistogram(width / 2, height / 2, width / 2, height / 2, gray, gd),
-                0, histogram, 4 * bins, bins);
+                0, tmpHistogram, 4 * bins, bins);
         // level 2
         int wstep = width / 4;
         int hstep = height / 4;
@@ -184,9 +184,13 @@ public class PHOG implements LireFeature {
         for (int i = 0; i< 4; i++) {
             for (int j=0; j<4; j++) {
                 System.arraycopy(getHistogram(i*wstep, j*hstep, wstep, hstep, gray, gd),
-                        0, histogram, binPos*bins, bins);
+                        0, tmpHistogram, binPos*bins, bins);
                 binPos++;
             }
+        }
+        // finally copy it to the byte[] array to save memory at search time.
+        for (int i = 0; i < tmpHistogram.length; i++) {
+            histogram[i] = (byte) tmpHistogram[i];
         }
         // level 3
 //        wstep = width / 8;
@@ -247,7 +251,8 @@ public class PHOG implements LireFeature {
         if (max > 0d) {
             for (int i = 0; i < result.length; i++) {
                 // quantize single values to xx steps to compress feature a little bit.
-                result[i] = Math.round(quantizationFactor * result[i] / max);
+                result[i] = Math.floor(quantizationFactor * result[i] / max);
+                result[i] = Math.min(quantizationFactor, result[i]);
             }
         }
         return result;
@@ -280,7 +285,7 @@ public class PHOG implements LireFeature {
         else gray.getRaster().setPixel(x, y, tmp255);
     }
 
-    private void sobelFilter(BufferedImage gray, double[][] gx, double[][] gy) {
+    private static void sobelFilter(BufferedImage gray, double[][] gx, double[][] gy) {
         int[] tmp = new int[4];
         int tmpSumX = 0, tmpSumY =0, pix;
         for (int x = 1; x < gray.getWidth() - 1; x++) {
@@ -327,27 +332,30 @@ public class PHOG implements LireFeature {
     }
 
     public byte[] getByteArrayRepresentation() {
-        byte[] result = new byte[histogram.length];
+        byte[] result = new byte[histogram.length / 2];
         for (int i = 0; i < result.length; i++) {
-            result[i] = (byte) histogram[i];
+            tmp = ((int) (histogram[(i << 1)])) << 4;
+            tmp = (tmp | ((int) (histogram[(i << 1) + 1])));
+            result[i] = (byte) (tmp - 128);
+//            result[i] = (byte) histogram[i];
         }
         return result;
     }
 
     public void setByteArrayRepresentation(byte[] in) {
-        for (int i = 0; i < in.length; i++) {
-            histogram[i] = (double) in[i];
-        }
+        setByteArrayRepresentation(in, 0, in.length);
     }
 
     public void setByteArrayRepresentation(byte[] in, int offset, int length) {
-        for (int i = offset; i < length; i++) {
-            histogram[i] = (double) in[i];
+        for (int i = 0; i < length; i++) {
+            tmp = in[i+offset] + 128;
+            histogram[(i << 1) + 1] = (byte) (tmp & 0x000F);
+            histogram[i << 1] = (byte) (tmp >> 4);
         }
     }
 
     public double[] getDoubleHistogram() {
-        return histogram;
+        return SerializationUtils.castToDoubleArray(histogram);
     }
 
     public float getDistance(LireFeature feature) {
@@ -371,5 +379,15 @@ public class PHOG implements LireFeature {
     @Override
     public void setStringRepresentation(String s) {
 
+    }
+
+    @Override
+    public String getFeatureName() {
+        return "PHOG";
+    }
+
+    @Override
+    public String getFieldName() {
+        return DocumentBuilder.FIELD_NAME_PHOG;
     }
 }

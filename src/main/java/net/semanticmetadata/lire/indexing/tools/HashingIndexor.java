@@ -62,14 +62,11 @@ import java.io.IOException;
  * Created: 21.03.13 10:03
  *
  * @author Mathias Lux, mathias@juggle.at
- * @author sangupta, sandy.pec@gmail.com
  */
 public class HashingIndexor extends Indexor {
-	
-    protected Class<? extends LireFeature> featureClass = PHOG.class;
+    protected Class featureClass = PHOG.class;
 
-    @SuppressWarnings("unchecked")
-	public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
+    public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
         HashingIndexor indexor = new HashingIndexor();
         BitSampling.readHashFunctions();
 //        BitSampling.readHashFunctions(new FileInputStream(BitSampling.hashFunctionsFileName));
@@ -90,7 +87,7 @@ public class HashingIndexor extends Indexor {
                 // index
                 if ((i + 1) < args.length)
                     try {
-                        indexor.setFeatureClass((Class<? extends LireFeature>) Class.forName(args[i + 1]));
+                        indexor.setFeatureClass(Class.forName(args[i + 1]));
                     } catch (ClassNotFoundException e) {
                         System.err.println("Could not find feature class named " + args[i + 1]);
                         printHelp();
@@ -125,18 +122,35 @@ public class HashingIndexor extends Indexor {
         }
     }
 
-    public void setFeatureClass(Class<? extends LireFeature> featureClass) {
+    public void setFeatureClass(Class featureClass) {
         this.featureClass = featureClass;
     }
 
     protected void addToDocument(LireFeature feature, Document document, String featureFieldName) {
+        // This is for debugging the image features.
+//        try {
+////            System.out.println(feature.getClass().getName() + " " + document.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]);
+//            LireFeature f1 = feature.getClass().newInstance();
+//            f1.extract(ImageIO.read(new File(document.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0])));
+//            float distance = feature.getDistance(f1);
+//            if (distance != 0) {
+//                System.out.println("Extracted:" + java.util.Arrays.toString(f1.getDoubleHistogram()).replaceAll("\\.0,", "") + "\n" +
+//                        "Data     :" + java.util.Arrays.toString(feature.getDoubleHistogram()).replaceAll("\\.0,", "") + "\n" +
+//                        "Problem with " + f1.getClass().getName() + " at file " + document.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0] + ", distance=" + distance
+//                );
+////                System.out.println("Problem with " + f1.getClass().getName() + " at file " + document.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0] + ", distance=" + distance);
+//            }
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//
+//        }
         if (feature.getClass().getCanonicalName().equals(featureClass.getCanonicalName())) {
             // generate hashes here:
 //            int[] hashes = LocalitySensitiveHashing.generateHashes(feature.getDoubleHistogram());
             int[] hashes = BitSampling.generateHashes(feature.getDoubleHistogram());
 //            System.out.println(Arrays.toString(hashes));
             // store hashes in index as terms
-            document.add(new TextField(featureFieldName+"_hash", SerializationUtils.arrayToString(hashes), Field.Store.YES));
+            document.add(new TextField(featureFieldName + "_hash", SerializationUtils.arrayToString(hashes), Field.Store.YES));
             // add the specific feature
             document.add(new StoredField(featureFieldName, feature.getByteArrayRepresentation()));
         }

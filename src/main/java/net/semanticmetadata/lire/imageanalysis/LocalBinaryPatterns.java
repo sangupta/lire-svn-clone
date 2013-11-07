@@ -32,13 +32,16 @@
  * URL: http://www.morganclaypool.com/doi/abs/10.2200/S00468ED1V01Y201301ICR025
  *
  * Copyright statement:
- * --------------------
+ * ====================
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
- *     http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *
+ * Updated: 11.07.13 10:31
  */
 
 package net.semanticmetadata.lire.imageanalysis;
 
+import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.utils.ImageUtils;
 import net.semanticmetadata.lire.utils.MetricsUtils;
 
@@ -61,7 +64,7 @@ public class LocalBinaryPatterns implements LireFeature {
 
     private void extractRadiusWithOne(BufferedImage image) {
         // first convert to intensity only.
-        WritableRaster raster = ImageUtils.convertImageToGrey(image).getRaster();
+        WritableRaster raster = ImageUtils.getGrayscaleImage(image).getRaster();
         // cached pixel array
         int[] pixel = new int[9];
         int bin = 0;
@@ -87,14 +90,14 @@ public class LocalBinaryPatterns implements LireFeature {
             max = Math.max(histogram[i], max);
         }
         for (int i = 0; i < histogram.length; i++) {
-            histogram[i] = Math.floor((histogram[i] / max) * 128);
+            histogram[i] = Math.floor((histogram[i] / max) * 127);
         }
     }
 
     @SuppressWarnings("unused")
 	private void extractWithRadiusTwo(BufferedImage image) {
         // first convert to intensity only.
-        WritableRaster raster = ImageUtils.convertImageToGrey(image).getRaster();
+        WritableRaster raster = ImageUtils.getGrayscaleImage(image).getRaster();
         // cached pixel array
         int[] pixel = new int[25];
         int bin = 0;
@@ -143,8 +146,8 @@ public class LocalBinaryPatterns implements LireFeature {
 
     @Override
     public void setByteArrayRepresentation(byte[] in, int offset, int length) {
-        for (int i = offset; i < offset + length; i++) {
-            histogram[i - offset] = in[i];
+        for (int i = 0; i < length; i++) {
+            histogram[i] = in[i+offset];
         }
     }
 
@@ -166,5 +169,15 @@ public class LocalBinaryPatterns implements LireFeature {
     @Override
     public void setStringRepresentation(String s) {
         throw new UnsupportedOperationException("Not implemented!");
+    }
+
+    @Override
+    public String getFeatureName() {
+        return "Local Binary Patterns";
+    }
+
+    @Override
+    public String getFieldName() {
+        return DocumentBuilder.FIELD_NAME_LOCAL_BINARY_PATTERNS;
     }
 }

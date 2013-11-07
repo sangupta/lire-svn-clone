@@ -51,14 +51,8 @@ import java.util.StringTokenizer;
 //import org.apache.lucene.index.Norm;
 
 public class GeneralInvertedListTest extends TestCase {
-	
-	@SuppressWarnings("unused")
     private String indexPath = "./test-index-cedd-flickr";
-	
-	@SuppressWarnings("unused")
     private int numRefObjsReferenced = 50;
-	
-	@SuppressWarnings("unused")
     private int numRefObjs = 500;
 
     /*
@@ -181,7 +175,7 @@ public class GeneralInvertedListTest extends TestCase {
 
     public static Query getQuery(String queryString) {
         BooleanQuery b = new BooleanQuery();
-//        TermQuery t;
+        TermQuery t;
         StringTokenizer st = new StringTokenizer(queryString);
         while (st.hasMoreTokens())
             b.add(new BooleanClause(new TermQuery(new Term("ro-order", st.nextToken())), BooleanClause.Occur.SHOULD));

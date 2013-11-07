@@ -36,7 +36,7 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 01.06.13 11:38
+ * Updated: 16.07.13 15:44
  */
 
 package net.semanticmetadata.lire.indexing.parallel;
@@ -44,6 +44,7 @@ package net.semanticmetadata.lire.indexing.parallel;
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.DocumentBuilderFactory;
 import net.semanticmetadata.lire.imageanalysis.*;
+import net.semanticmetadata.lire.imageanalysis.joint.JointHistogram;
 import net.semanticmetadata.lire.impl.ChainedDocumentBuilder;
 import net.semanticmetadata.lire.impl.GenericDocumentBuilder;
 import net.semanticmetadata.lire.indexing.LireCustomCodec;
@@ -57,10 +58,7 @@ import org.apache.lucene.store.FSDirectory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -72,7 +70,6 @@ import java.util.Stack;
  * threads extract the features from the given files.
  *
  * @author Mathias Lux, mathias@juggle.at, 15.04.13
- * @author sangupta, sandy.pec@gmail.com
  */
 
 public class ParallelIndexer implements Runnable {
@@ -253,23 +250,10 @@ public class ParallelIndexer implements Runnable {
                 files = FileUtils.getAllImages(new File(imageDirectory), true);
             } else {
                 files = new LinkedList<String>();
-                
-                BufferedReader br = null;
-                
-                try {
-					br = new BufferedReader(new FileReader(imageList));
-	                String line = null;
-	                while ((line = br.readLine()) != null) {
-	                    if (line.trim().length() > 3) files.add(line.trim());
-	                }
-                } finally {
-                	if(br != null) {
-                		try {
-                			br.close();
-                		} catch(IOException e) {
-                			e.printStackTrace();
-                		}
-                	}
+                BufferedReader br = new BufferedReader(new FileReader(imageList));
+                String line = null;
+                while ((line = br.readLine()) != null) {
+                    if (line.trim().length() > 3) files.add(line.trim());
                 }
             }
             numImages = files.size();
@@ -289,7 +273,7 @@ public class ParallelIndexer implements Runnable {
                 iterator.next().join();
             }
             long l1 = System.currentTimeMillis() - l;
-            System.out.println("Analyzed " + overallCount + " images in " + l1 / 1000 + " seconds, ~" + l1 / overallCount + " ms each.");
+            System.out.println("Analyzed " + overallCount + " images in " + l1 / 1000 + " seconds, ~" + ((overallCount>0)?(l1 / overallCount):"n.a.") + " ms each.");
             writer.commit();
             writer.close();
             threadFinished = true;
@@ -330,7 +314,7 @@ public class ParallelIndexer implements Runnable {
                 try {
                     // print the current status:
                     long time = System.currentTimeMillis() - ms;
-                    System.out.println("Analyzed " + overallCount + " images in " + time / 1000 + " seconds, " + time / overallCount + " ms each ("+images.size()+" images currently in queue).");
+                    System.out.println("Analyzed " + overallCount + " images in " + time / 1000 + " seconds, " + ((overallCount>0)?(time / overallCount):"n.a.") + " ms each ("+images.size()+" images currently in queue).");
                     Thread.sleep(1000 * monitoringInterval); // wait xx seconds
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -341,26 +325,38 @@ public class ParallelIndexer implements Runnable {
 
     class Producer implements Runnable {
         public void run() {
-            BufferedImage tmpImage;
+            boolean leaveOneOut = false;
+//            BufferedImage tmpImage;
             int tmpSize = 0;
             for (Iterator<String> iterator = files.iterator(); iterator.hasNext(); ) {
                 String path = iterator.next();
                 File next = new File(path);
                 try {
-                    tmpImage = ImageIO.read(next);
-                    tmpSize = 1;
+//                    tmpImage = ImageIO.read(next);
+                    int fileSize = (int) next.length();
+                    byte[] buffer = new byte[fileSize];
+                    FileInputStream fis = new FileInputStream(next);
+                    fis.read(buffer);
                     synchronized (images) {
                         path = next.getCanonicalPath();
                         // TODO: add re-write rule for path here!
 //                        path = path.replace("E:\\WIPO-conv\\convert", "");
 //                        path = path.replace("D:\\Temp\\WIPO-US\\jpg_", "");
-                        images.add(new WorkItem(path, tmpImage));
+                        // this helps a lot for slow computers ....
+                        if (images.size()>500) images.wait(5000);
+                        images.add(new WorkItem(path, buffer));
                         tmpSize = images.size();
                         images.notifyAll();
                     }
                     try {
+                        // it's actually hard to manage the amount of memory used to cache images.
+                        // On faster computers it turns out to be good to have a big cache, on
+                        // slower ones the cache poses a serious problem and leads to memory and GC exceptions.
+                        // iy you encounter still memory errors, then try to use more threads.
                         if (tmpSize > 500) Thread.sleep(50);
                         else if (tmpSize > 1000) Thread.sleep(5000);
+                        else if (tmpSize > 2000) Thread.sleep(50000);
+                        else if (tmpSize > 3000) Thread.sleep(500000);
                         else Thread.sleep(5);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
@@ -413,11 +409,14 @@ public class ParallelIndexer implements Runnable {
                 }
                 try {
                     if (!locallyEnded) {
-                        Document d = builder.createDocument(tmp.getImage(), tmp.getFileName());
+                        ByteArrayInputStream b = new ByteArrayInputStream(tmp.getBuffer());
+                        BufferedImage img = ImageIO.read(b);
+                        Document d = builder.createDocument(img, tmp.getFileName());
                         writer.addDocument(d);
                     }
                 } catch (Exception e) {
-                    System.err.println("Could not handle file " + tmp.getFileName() + ": "  + e.getMessage());
+                    System.err.println("[ParallelIndexer] Could not handle file " + tmp.getFileName() + ": "  + e.getMessage());
+                    e.printStackTrace();
                 }
             }
 //            System.out.println("Images analyzed: " + count);

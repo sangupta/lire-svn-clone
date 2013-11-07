@@ -36,10 +36,11 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 22.06.13 11:43
+ * Updated: 11.07.13 10:31
  */
 package net.semanticmetadata.lire.imageanalysis;
 
+import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.imageanalysis.mpeg7.ColorLayoutImpl;
 
 /**
@@ -123,6 +124,16 @@ public class ColorLayout extends ColorLayoutImpl implements LireFeature {
     public float getDistance(LireFeature descriptor) {
         if (!(descriptor instanceof ColorLayoutImpl)) return -1f;
         ColorLayoutImpl cl = (ColorLayoutImpl) descriptor;
-        return (float) ColorLayoutImpl.getSimilarity(YCoeff, CbCoeff, CrCoeff, cl.YCoeff, cl.CbCoeff, cl.CrCoeff);
+        return (float) getSimilarity(YCoeff, CbCoeff, CrCoeff, cl.YCoeff, cl.CbCoeff, cl.CrCoeff);
+    }
+
+    @Override
+    public String getFeatureName() {
+        return "MPEG-7 Color Layout";
+    }
+
+    @Override
+    public String getFieldName() {
+        return DocumentBuilder.FIELD_NAME_COLORLAYOUT;
     }
 }

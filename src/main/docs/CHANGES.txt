@@ -1,5 +1,151 @@
 CHANGES for LIRE
 ================
+
+2013-10-29
+==========
+  - Doubled PHOG & Canny Edge Detector extraction speed (with Carlos Perez Lara)
+
+2013-10-22
+==========
+  - Added difference of Gaussians method to ImageUtils and unit test
+
+2013-10-14
+==========
+  - Added constructor to GenericDocumentBuilder to allow for selection of Hashing algorithm.
+  - Added some test files to excludes in compile task in the ant file.
+
+2013-10-01
+==========
+  - Fixed bugs in Canny Edge Detector implementation
+  - Fixed the same bugs in PHOG
+
+2013-09-30
+==========
+  - Added convenience methods to VLADBuilder (indexMissing, etc.)
+  - Added GenericByteLireFeature and renamed generic feature to
+    net.semanticmetadata.lire.imageanalysis.GenericDoubleLireFeature
+
+
+2013-09-27
+==========
+  - Added a preliminary implementation of the VLAD descriptor (net.semanticmetadata.lire.imageanalysis.bovw.VLADBuilder)
+    It's working, but not all features are available right now. Performance on the Wang data set is slightly better than
+    Edge Histogram, and slightly worse than PHOG. On the UCID data set it's quite in the middle.
+
+2013-09-20
+==========
+  - Added pixel clustering quantization method in package net.semanticmetadata.lire.utils.cv
+  - Added fast bilateral filtering based on the code from Frederic Langlet - https://code.google.com/p/kanzi/
+  - Added generic double[] k-means in package net.semanticmetadata.lire.utils.cv
+
+2013-09-17
+==========
+  - Updated to Lucene 4.4.0
+
+2013-09-13
+==========
+  - Fixed bug in ColorLayout distance metric
+  - Fixed bug in JCD re-use
+  - Fixed handling of "white only" images in trim(...) function.
+
+2013-08-08
+==========
+  - Speeded up ParallelIndexer by moving JPEG decoding to the consumer part.
+
+2013-08-08
+==========
+  - Speeded up OpponentHistogram extraction
+  - Speeded up ParallelExtractor by moving JPEG decoding to the consumer part.
+  - Speeded up ColorLayoutImpl similarity implementation
+  - Small improvements on the JCD similarity implementation
+
+2013-08-07
+==========
+  - Changed CEDD internal data handling from double to bytes
+  - Changed OpponentHistogram internal data handling from double to bytes
+
+2013-08-03
+==========
+  - Adjusted TestUCID to new, faster searcher implementation.
+  - Release 0.9.4 beta_2
+
+2013-08-02
+==========
+  - Changed quantization & serialization of PHOG (smaller feature, half the size)
+  - Changed quantization of JCD for support of RLE with zero values (~56% less space)
+  - Fixed some debug code in HashingIndexor.
+  - Caught a division by zero in ParallelExtractor
+
+2013-08-01
+==========
+  - Added fast & dirty search method to BitSamplingImageSearcher.
+
+2013-07-22
+==========
+  - Fixed concurrency bug in FCTH & CEDD, eliminated therefore in JCD too.
+
+2013-07-17
+==========
+  - Fixed serialization bugs and quantization bugs in several classes
+  - Added a module test for that in TestGeneral
+  - Found a concurrency issue in CEDD and therefore too in JCD.
+
+2013-07-17
+==========
+  - Removed the use of GZip Streams in Extractor and Indexor. It tended to mess up things.
+  - Added a fail-safe check for RBG images & non 8-bit-per-pixel images to OpponentHistogram,
+    CEDD, EdgeHistogram, ColorLayout, FCTH, JCD, JointHistogram.
+
+2013-07-17
+==========
+  - Fixed bug in EdgeHistogram Extraction.
+  - Added new test to find bugs in TestGeneral
+
+2013-07-16
+==========
+  - Fixed bug in JCD serialization.
+
+2013-07-12
+==========
+  - deprecated DocumentFactory
+  - Added forceMerge(1) to LocalFeatureHistogramBuilder (as reported to be needed by
+    James Charters, me@jamescharters.info)
+  - Set parallel k-means as default in LocalFeatureHistogramBuilder
+
+2013-07-11
+==========
+  - Added name and field name methods to LireFeature interface to simplify creation of builders and searchers.
+  - Updated GenericDocumentBuilder and GenericFastImageSearcher to reflect the changes
+  - Updated documentation in several classes
+  - deprecated GenericImageSearcher
+  - Added histogram quantization to LocalFeatureHistogramBuilder & fixed bug in feature counting.
+
+2013-07-10
+==========
+  - Added getDoubleHistogram to FuzzyColorHistogram (by patch contributed by Franz Graf, franz.graf@gmail.com)
+
+2013-07-07
+==========
+  - Added thresholding in ImageUtils
+
+2013-07-07
+==========
+  - Added new, easier constructor to GenericDocumentBuilder.
+  - Fixed bug in quantization of PHOG histograms.
+  - Updated to commons math 3.2
+  - Added simplified constructors to BitSamplingImageSearcher
+  - Added lookup data structures to GenericDocumentBuilder
+
+2013-07-06
+==========
+  - Added BinaryPatternsPyramid
+
+2013-07-01
+==========
+  - Re-organized joint histograms
+  - Re-organized getGrayscaleImage(...)
+  - Re-coded trimWhiteSpace(...) in ImageUtils
+
 2013-06-25
 ==========
   - Mavenization of the project (Sandeep Gupta twitter.com/sangupta)

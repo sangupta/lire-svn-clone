@@ -150,7 +150,7 @@ public class TestHashingIndex extends TestCase {
 
     }
 
-    private void testHashing(Class<? extends LireFeature> featureClass, String fieldName) throws IOException, InstantiationException, IllegalAccessException {
+    private void testHashing(Class featureClass, String fieldName) throws IOException, InstantiationException, IllegalAccessException {
         String hashesFile = "hashes.obj";
         String hashesFileL = "l_hashes.obj";
         int numResults = 50;

@@ -54,14 +54,9 @@ import java.util.LinkedList;
  * Date: 21.02.12
  * Time: 16:32
  * To change this template use File | Settings | File Templates.
- * 
- * @author sangupta, sandy.pec@gmail.com
  */
 public class HashingTest extends TestCase {
-	
-	@SuppressWarnings("unused")
     private float[][] hashPlanes;
-	
     int bits = 16, dimensions = 256;
     private int numFunctionBundles = 10;
 
@@ -142,7 +137,7 @@ public class HashingTest extends TestCase {
         oos.writeInt(numFunctionBundles);
         for (int c = 0; c < numFunctionBundles; c++) {
             for (int i = 0; i < bits; i++) {
-//                float[] hashPlane = hashPlanes[i];
+                float[] hashPlane = hashPlanes[i];
                 for (int j = 0; j < dimensions; j++) {
                     oos.writeFloat((float) (Math.random() * 8d - 4d));
                 }
@@ -152,28 +147,20 @@ public class HashingTest extends TestCase {
     }
 
     public void testReadHashFunctions() throws IOException {
-        ObjectInputStream ois = null;
-        
-        try {
-			ois = new ObjectInputStream(new FileInputStream("hashFunctions.obj"));
-	        int bits = ois.readInt();
-	        int dimensions = ois.readInt();
-	        int numFunctionBundles = ois.readInt();
-	
-	        float[][][] hashFunctions = new float[numFunctionBundles][bits][dimensions];
-	        for (int i = 0; i < hashFunctions.length; i++) {
-	            float[][] functionBundle = hashFunctions[i];
-	            for (int j = 0; j < functionBundle.length; j++) {
-	                float[] bitFunctions = functionBundle[j];
-	                for (int k = 0; k < bitFunctions.length; k++) {
-	                    bitFunctions[k] = ois.readFloat();
-	                }
-	            }
-	        }
-        } finally {
-        	if(ois != null) {
-        		ois.close();
-        	}
+        ObjectInputStream ois = new ObjectInputStream(new FileInputStream("hashFunctions.obj"));
+        int bits = ois.readInt();
+        int dimensions = ois.readInt();
+        int numFunctionBundles = ois.readInt();
+
+        float[][][] hashFunctions = new float[numFunctionBundles][bits][dimensions];
+        for (int i = 0; i < hashFunctions.length; i++) {
+            float[][] functionBundle = hashFunctions[i];
+            for (int j = 0; j < functionBundle.length; j++) {
+                float[] bitFunctions = functionBundle[j];
+                for (int k = 0; k < bitFunctions.length; k++) {
+                    bitFunctions[k] = ois.readFloat();
+                }
+            }
         }
     }
 }

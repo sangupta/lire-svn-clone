@@ -58,7 +58,6 @@ import org.apache.lucene.store.FSDirectory;
 import java.io.*;
 import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.zip.GZIPInputStream;
 
 /**
  * The Indexor (yes, I know the hashFunctionsFileName sounds weird, but it should match the Extractor class, and not
@@ -68,13 +67,11 @@ import java.util.zip.GZIPInputStream;
  * @author Mathias Lux, mathias@juggle.at
  *         Date: 08.03.13
  *         Time: 14:28
- * 
- * @author sangupta, sandy.pec@gmail.com
  */
 public class Indexor {
     protected LinkedList<File> inputFiles = new LinkedList<File>();
     protected String indexPath = null;
-//    private boolean overwriteIndex = true;
+    //    private boolean overwriteIndex = true;
     protected static boolean verbose = true;
     protected int count;
 
@@ -101,6 +98,15 @@ public class Indexor {
             } else if (arg.startsWith("-c")) {
                 // list of input files within a file.
                 if ((i + 1) < args.length) {
+                    BufferedReader br = new BufferedReader(new FileReader(new File(args[i + 1])));
+                    String file;
+                    while ((file = br.readLine()) != null) {
+                        if (file.trim().length() > 2) {
+                            File f = new File(file);
+                            if (f.exists()) indexor.addInputFile(f);
+                            else System.err.println("Did not find file " + f.getCanonicalPath());
+                        }
+                    }
                 } else printHelp();
             }
         }
@@ -183,40 +189,44 @@ public class Indexor {
      * @throws ClassNotFoundException
      */
     private void readFile(IndexWriter indexWriter, File inputFile) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-        BufferedInputStream in = new BufferedInputStream(new GZIPInputStream(new FileInputStream(inputFile)));
+        InputStream in = new FileInputStream(inputFile);
         byte[] tempInt = new byte[4];
         int tmp, tmpFeature;
         count = 0;
         byte[] temp = new byte[100 * 1024];
         // read file hashFunctionsFileName length:
-        while (in.read(tempInt, 0, 4) > 0) {
+        while ((tmp = in.read(tempInt, 0, 4)) > 0) {
             Document d = new Document();
             tmp = SerializationUtils.toInt(tempInt);
             // read file hashFunctionsFileName:
             in.read(temp, 0, tmp);
             String filename = new String(temp, 0, tmp);
             // normalize Filename to full path.
-            filename = inputFile.getCanonicalPath().substring(0, inputFile.getCanonicalPath().lastIndexOf(inputFile.getName())) + filename;
+//            filename = inputFile.getCanonicalPath().substring(0, inputFile.getCanonicalPath().lastIndexOf(inputFile.getName())) + filename;
             d.add(new StringField(DocumentBuilder.FIELD_NAME_IDENTIFIER, filename, Field.Store.YES));
 //            System.out.print(filename);
-            while ((tmpFeature = in.read()) < 255) {
-//                System.out.print(", " + tmpFeature);
+            while (in.read(tempInt, 0, 1) > 0) {
+                if (tempInt[0] == -1) break;
+                tmpFeature = tempInt[0];
+//                System.out.println("tmpFeature=" + tmpFeature);
                 LireFeature f = (LireFeature) Class.forName(Extractor.features[tmpFeature]).newInstance();
                 // byte[] length ...
                 in.read(tempInt, 0, 4);
                 tmp = SerializationUtils.toInt(tempInt);
                 // read feature byte[]
+//                System.out.println(tmp);
                 in.read(temp, 0, tmp);
                 f.setByteArrayRepresentation(temp, 0, tmp);
                 addToDocument(f, d, Extractor.featureFieldNames[tmpFeature]);
 //                d.add(new StoredField(Extractor.featureFieldNames[tmpFeature], f.getByteArrayRepresentation()));
             }
+//            System.out.println(tmpFeature);
             indexWriter.addDocument(d);
             count++;
 //            if (count >= 20000) break;
             if (verbose) {
-                if (count % 1000 == 0) System.out.print('.');
-                if (count % 10000 == 0) System.out.println(" " + count);
+                if (count % 100 == 0) System.out.print('.');
+                if (count % 1000 == 0) System.out.println(" " + count);
             }
         }
         if (verbose) System.out.println(" " + count);

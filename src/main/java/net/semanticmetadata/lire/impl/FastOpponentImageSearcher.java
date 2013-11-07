@@ -70,12 +70,8 @@ public class FastOpponentImageSearcher extends AbstractImageSearcher {
 
     private int maxHits = 10;
     protected TreeSet<SimpleResult> docs;
-    
-    @SuppressWarnings("unused")
     private byte[] tempBinaryValue;
     private double maxDistance;
-    
-    @SuppressWarnings("unused")
     private float overallMaxDistance;
 
     public FastOpponentImageSearcher(int maxHits) {

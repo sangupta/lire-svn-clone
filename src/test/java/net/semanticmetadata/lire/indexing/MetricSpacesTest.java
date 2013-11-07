@@ -45,7 +45,6 @@ import junit.framework.TestCase;
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.ImageSearcher;
 import net.semanticmetadata.lire.ImageSearcherFactory;
-
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.search.ScoreDoc;
@@ -111,9 +110,7 @@ public class MetricSpacesTest extends TestCase {
         int numSearches = 10;
         IndexReader reader = mes.getIndexReader(indexPath);
         System.out.println(reader.maxDoc() + " documents");
-        
-        @SuppressWarnings("unused")
-		TopDocs docs;
+        TopDocs docs;
 
         long ms = System.currentTimeMillis();
         for (int i = 0; i < numSearches; i++) {

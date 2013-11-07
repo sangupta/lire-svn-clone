@@ -32,9 +32,11 @@
  * URL: http://www.morganclaypool.com/doi/abs/10.2200/S00468ED1V01Y201301ICR025
  *
  * Copyright statement:
- * --------------------
+ * ====================
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
- *     http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *
+ * Updated: 11.07.13 10:43
  */
 
 package net.semanticmetadata.lire.benchmarking;
@@ -75,7 +77,7 @@ public class SimpleFeature implements LireFeature {
 
     @Override
     public float getDistance(LireFeature feature) {
-//        double k1 = 1.2, b = 0.75;
+        double k1 = 1.2, b = 0.75;
         double[] hist1 = new double[hist.length], hist2 = new double[hist.length];
         System.arraycopy(hist, 0, hist1, 0, hist.length);
         System.arraycopy(((SimpleFeature) feature).hist, 0, hist2, 0, hist.length);
@@ -107,5 +109,15 @@ public class SimpleFeature implements LireFeature {
     @Override
     public void setStringRepresentation(String s) {
         hist = SerializationUtils.doubleArrayFromString(s);
+    }
+
+    @Override
+    public String getFeatureName() {
+        return "Simple Test Feature";
+    }
+
+    @Override
+    public String getFieldName() {
+        return "f_sitfe";
     }
 }

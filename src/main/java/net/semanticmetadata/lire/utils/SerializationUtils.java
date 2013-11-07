@@ -83,6 +83,7 @@ public class SerializationUtils {
      * @see net.semanticmetadata.lire.utils.SerializationUtils#toInt(byte[])
      */
     public static byte[] toBytes(int data) {
+
         return new byte[]{
                 (byte) ((data >> 24) & 0xff),
                 (byte) ((data >> 16) & 0xff),
@@ -171,13 +172,12 @@ public class SerializationUtils {
     public static int[] toIntArray(byte[] in, int offset, int length) {
         int[] result = new int[(length >> 2)];
         byte[] tmp = new byte[4];
-        for (int i = offset; i < length >> 2; i++) {
-            System.arraycopy(in, offset + (i - offset) * 4, tmp, 0, 4);
+        for (int i = 0; i < length >> 2; i++) {
+            System.arraycopy(in, offset + (i * 4), tmp, 0, 4);
             result[i] = toInt(tmp);
         }
         return result;
     }
-
 
     /**
      * Converts a float to a byte array with 4 elements. Used to put floats into a byte[] payload in a convenient
@@ -254,7 +254,6 @@ public class SerializationUtils {
         return result;
     }
 
-
     /**
      * Converts a double to a byte array with 4 elements. Used to put doubles into a byte[] payload in a convenient
      * and fast way by shifting without using streams (which is kind of slow). Use
@@ -318,6 +317,20 @@ public class SerializationUtils {
      * Convenience method for creating a double array from a byte array.
      *
      * @param data
+     * @return
+     */
+    public static double[] castToDoubleArray(byte[] data) {
+        double[] result = new double[data.length];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = data[i];
+        }
+        return result;
+    }
+
+    /**
+     * Convenience method for creating a double array from a byte array.
+     *
+     * @param data
      * @param length
      * @param offset
      * @return
@@ -325,13 +338,12 @@ public class SerializationUtils {
     public static double[] toDoubleArray(byte[] data, int offset, int length) {
         double[] result = new double[length / 8];
         byte[] tmp = new byte[8];
-        for (int i = offset; i < length / 8; i++) {
-            System.arraycopy(data, (i - offset) * 8 + offset, tmp, 0, 8);
+        for (int i = 0; i < result.length; i++) {
+            System.arraycopy(data, i * 8 + offset, tmp, 0, 8);
             result[i] = toDouble(tmp);
         }
         return result;
     }
-
 
     /**
      * Convenience method for creating a String from an array.
@@ -368,13 +380,72 @@ public class SerializationUtils {
         return result;
     }
 
-
     public static double[] toDoubleArray(float[] d) {
         double[] result = new double[d.length];
         for (int i = 0; i < result.length; i++) {
             result[i] = (double) d[i];
         }
         return result;
+    }
+
+    /**
+     * Create a double[] from an int[]<br/>
+     * by patch contributed by Franz Graf, franz.graf@gmail.com
+     *
+     * @param ints the int array
+     * @return a new array of doubles
+     */
+    public static double[] toDoubleArray(int[] ints) {
+        double[] result = new double[ints.length];
+        for (int i = 0; i < result.length; i++) {
+            result[i] = (double) ints[i];
+        }
+        return result;
+    }
+
+    /**
+     * Creates a double[] array from a String. It is assumed that the double array is encoded like using {@link #toString(double[])}
+     * @param data
+     * @return
+     */
+    public static double[] toDoubleArray(String data) {
+        LinkedList<Double> dl = new LinkedList<Double>();
+        StringTokenizer st = new StringTokenizer(data);
+        while(st.hasMoreTokens()) {
+            dl.add(Double.parseDouble(st.nextToken()));
+        }
+        double[] result = new double[dl.size()];
+        int count = 0;
+        for (Iterator<Double> iterator = dl.iterator(); iterator.hasNext(); ) {
+            double next = iterator.next();
+            result[count] = next;
+            count++;
+        }
+        return result;
+    }
+
+
+    /**
+     * A simple string creation method. Can be parsed with {@link #toDoubleArray(String)}.
+     * @param data
+     * @return
+     */
+    public static String toString(double[] data) {
+        StringBuilder sb = new StringBuilder(data.length<<2);
+        for (int i = 0; i < data.length; i++) {
+            sb.append(data[i]);
+            sb.append(' ');
+        }
+        return sb.toString();
+    }
+
+    public static String toString(byte[] data) {
+        StringBuilder sb = new StringBuilder(data.length<<2);
+        for (int i = 0; i < data.length; i++) {
+            sb.append(data[i]);
+            sb.append(' ');
+        }
+        return sb.toString();
     }
 }
 

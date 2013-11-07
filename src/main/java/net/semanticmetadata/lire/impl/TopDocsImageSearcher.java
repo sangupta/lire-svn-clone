@@ -108,7 +108,7 @@ public class TopDocsImageSearcher {
      */
     protected float findSimilar(TopDocs results, IndexReader reader, LireFeature lireFeature) throws IOException {
         float maxDistance = -1f, overallMaxDistance = -1f;
-//        boolean hasDeletions = reader.hasDeletions();
+        boolean hasDeletions = reader.hasDeletions();
 
         // clear result set ...
         docs.clear();

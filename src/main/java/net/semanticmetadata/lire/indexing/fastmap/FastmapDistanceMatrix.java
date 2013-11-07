@@ -45,7 +45,6 @@ import net.semanticmetadata.lire.matrix.DistanceMatrix;
  * Time: 22:06:25
  *
  * @author Mathias Lux, mathias@juggle.at
- * @author sangupta, sandy.pec@gmail.com
  */
 public interface FastmapDistanceMatrix extends DistanceMatrix {
 

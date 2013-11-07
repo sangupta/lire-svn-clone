@@ -51,8 +51,8 @@ public class FuzzyColorTest extends TestCase {
     public void testFuzziness() {
         int[] pixel = new int[]{40, 120, 230};
 
-//        int[] bins = new int[8];
-//        double[] amount = new double[8];
+        int[] bins = new int[8];
+        double[] amount = new double[8];
 
         for (int i = 0; i < pixel.length; i++) {
             double[] bt = new double[4];

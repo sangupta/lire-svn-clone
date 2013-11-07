@@ -36,7 +36,7 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 01.06.13 13:23
+ * Updated: 01.07.13 16:15
  */
 
 package net.semanticmetadata.lire.indexing.tools;
@@ -52,7 +52,6 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Properties;
-import java.util.zip.GZIPOutputStream;
 
 /**
  * The Extractor is a configurable class that extracts multiple features from multiple images
@@ -60,27 +59,27 @@ import java.util.zip.GZIPOutputStream;
  * and put the data files into one single index. Images are references relatively to the data file,
  * so it should work fine for network file systems.
  * <p/>
- * File format is specified as: (12(345)+)+ with 1-5 being ...
+ * File format is specified as: (12(345)+)+6 with 1-6 being ...
  * <p/>
- * 1. Length of the file hashFunctionsFileName [4 bytes], an int n giving the number of bytes for the file hashFunctionsFileName
- * 2. File hashFunctionsFileName, relative to the outfile [n bytes, see above]
+ * 1. Length of the file name [4 bytes], an int n giving the number of bytes for the file hashFunctionsFileName
+ * 2. File name, relative to the output file this data is written to [n bytes, see above]
  * 3. Feature index [1 byte], see static members
  * 4. Feature value length [4 bytes], an int k giving the number of bytes encoding the value
  * 5. Feature value [k bytes, see above]
+ * 6. One single byte with the value -1
  * <p/>
  * The file is sent through an GZIPOutputStream, so it's compressed in addition.
  *
  * Note that the outfile has to be in a folder parent to all images!
  *
  * @author Mathias Lux, mathias@juggle.at, 08.03.13
- * @author sangupta, sandy.pec@gmail.com
  */
 public class Extractor implements Runnable {
     public static final String[] features = new String[]{
             "net.semanticmetadata.lire.imageanalysis.CEDD",                  // 0
             "net.semanticmetadata.lire.imageanalysis.FCTH",                  // 1
             "net.semanticmetadata.lire.imageanalysis.OpponentHistogram",     // 2
-            "net.semanticmetadata.lire.imageanalysis.JointHistogram",        // 3
+            "net.semanticmetadata.lire.imageanalysis.joint.JointHistogram",        // 3
             "net.semanticmetadata.lire.imageanalysis.AutoColorCorrelogram",  // 4
             "net.semanticmetadata.lire.imageanalysis.ColorLayout",           // 5
             "net.semanticmetadata.lire.imageanalysis.EdgeHistogram",         // 6
@@ -92,7 +91,6 @@ public class Extractor implements Runnable {
             "net.semanticmetadata.lire.imageanalysis.Tamura",                // 12
             "net.semanticmetadata.lire.imageanalysis.LuminanceLayout",       // 13
             "net.semanticmetadata.lire.imageanalysis.PHOG",                  // 14
-            "net.semanticmetadata.lire.imageanalysis.spatialpyramid.SPCEDD"  // 15
     };
 
     public static final String[] featureFieldNames = new String[]{
@@ -111,7 +109,6 @@ public class Extractor implements Runnable {
             DocumentBuilder.FIELD_NAME_TAMURA,               // 12
             DocumentBuilder.FIELD_NAME_LUMINANCE_LAYOUT,     // 13
             DocumentBuilder.FIELD_NAME_PHOG,                  // 14
-            "spcedd"                  // 14
     };
 
     static HashMap<String, Integer> feature2index;
@@ -261,20 +258,17 @@ public class Extractor implements Runnable {
         // do it ...
         byte[] myBuffer = new byte[1024*1024*10];
         int bufferCount = 0;
-        
-        BufferedReader br = null;
-        
         try {
-			br = new BufferedReader(new FileReader(fileList));
-            BufferedOutputStream dos = new BufferedOutputStream(new GZIPOutputStream(new FileOutputStream(outFile)));
+            BufferedReader br = new BufferedReader(new FileReader(fileList));
+            OutputStream dos = new FileOutputStream(outFile);
             String file = null;
             String outFilePath = outFile.getCanonicalPath();
-            outFilePath = outFilePath.substring(0, outFilePath.lastIndexOf(outFile.getName()));
+//            outFilePath = outFilePath.substring(0, outFilePath.lastIndexOf(outFile.getName()));
             long ms = System.currentTimeMillis();
             int count=0;
             while ((file = br.readLine()) != null) {
                 File input = new File(file);
-                String relFile = input.getCanonicalPath().substring(outFilePath.length());
+                String relFile = input.getCanonicalPath();//.substring(outFilePath.length());
                 try {
                     BufferedImage img = ImageIO.read(input);
                     byte[] tmpBytes = relFile.getBytes();
@@ -292,7 +286,10 @@ public class Extractor implements Runnable {
                         // dos.write(feature2index.get(feature.getClass().getName()));
                         tmpBytes = feature.getByteArrayRepresentation();
                         System.arraycopy(SerializationUtils.toBytes(tmpBytes.length), 0, myBuffer, bufferCount, 4);
+//                        System.out.println(SerializationUtils.toInt(SerializationUtils.toBytes(tmpBytes.length)));
                         bufferCount += 4;
+//                        System.out.println(file + ": " + Arrays.toString(feature.getByteArrayRepresentation()));
+//                        System.out.println(file + ": " + Arrays.toString(feature.getDoubleHistogram()).replaceAll(", ", " "));
                         // dos.write(SerializationUtils.toBytes(tmpBytes.length));
                         System.arraycopy(tmpBytes, 0, myBuffer, bufferCount, tmpBytes.length);
                         bufferCount += tmpBytes.length;
@@ -310,19 +307,12 @@ public class Extractor implements Runnable {
                 if (count%100==0 && count > 0)
                     System.out.println(count + " files processed, " + (System.currentTimeMillis()-ms)/count + " ms per file.");
             }
+            dos.flush();
             dos.close();
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
-        } finally {
-        	if(br != null) {
-        		try {
-					br.close();
-				} catch (IOException e) {
-					e.printStackTrace();
-				}
-        	}
         }
     }
 }

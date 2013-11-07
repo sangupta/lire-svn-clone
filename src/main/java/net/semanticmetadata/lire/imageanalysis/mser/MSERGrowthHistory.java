@@ -49,10 +49,8 @@ import java.util.List;
  * User: Shotty
  * Date: 28.06.2010
  * Time: 11:04:17
- * 
- * @author sangupta, sandy.pec@gmail.com
  */
-public class MSERGrowthHistory implements Comparable<MSERGrowthHistory> {
+public class MSERGrowthHistory implements Comparable {
     int index;
     int size;
     int maxGreyValue;
@@ -166,17 +164,15 @@ public class MSERGrowthHistory implements Comparable<MSERGrowthHistory> {
         return index;
     }
 
-    public int compareTo(MSERGrowthHistory object) {
-        if (maxGreyValue < object.maxGreyValue) {
+    public int compareTo(Object o) {
+        if (maxGreyValue < ((MSERGrowthHistory) o).maxGreyValue) {
             return -1;
-        }
-        
-        if (maxGreyValue > object.maxGreyValue) {
+        } else if (maxGreyValue > ((MSERGrowthHistory) o).maxGreyValue) {
             return 1;
         }
-        
         return 0;
     }
+
 
     public static void main(String[] args) {
         int[] points = new int[]{12,

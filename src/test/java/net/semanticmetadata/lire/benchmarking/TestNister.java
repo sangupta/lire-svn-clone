@@ -41,23 +41,6 @@
 
 package net.semanticmetadata.lire.benchmarking;
 
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.channels.FileChannel;
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Set;
-
-import javax.imageio.ImageIO;
-
 import junit.framework.TestCase;
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.ImageSearchHits;
@@ -67,7 +50,6 @@ import net.semanticmetadata.lire.impl.SiftDocumentBuilder;
 import net.semanticmetadata.lire.impl.VisualWordsImageSearcher;
 import net.semanticmetadata.lire.utils.LuceneUtils;
 import net.semanticmetadata.lire.utils.StatsUtils;
-
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
@@ -76,6 +58,16 @@ import org.apache.lucene.index.MultiFields;
 import org.apache.lucene.search.similarities.Similarity;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.util.Bits;
+
+import javax.imageio.ImageIO;
+import java.io.*;
+import java.math.BigInteger;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Set;
 
 /**
  * User: mlux
@@ -178,7 +170,7 @@ public class TestNister extends TestCase {
 
     public void benchmark(int numWords) throws IOException {
         numVisualWords = numWords;
-//        String pathName = "nis_test_surf_" + numWords;
+        String pathName = "nis_test_surf_" + numWords;
 //        createVocabulary(pathName);
 //        testDocLengthIDF(pathName);
         for (int k = 0; k < 5; k++) { // run the test 5 times ...
@@ -205,24 +197,15 @@ public class TestNister extends TestCase {
         int[] len = new int[10200];
 
         avgDocLength = 0;
-        
-        @SuppressWarnings("unused")
         double numDocs = 0;
-        for (int i = 0; i < df.length; i++) {
+        for (int i = 0; i < df.length; i++)
             df[i] = 0;
-        }
-        
-        for (int i = 0; i < len.length; i++) {
+        for (int i = 0; i < len.length; i++)
             len[i] = 0;
-        }
-            
         IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(pathName)));
         for (int i = 0; i < reader.numDocs(); i++) {
 //            if (!reader.isDeleted(i)) {
-        	
-        	@SuppressWarnings("unused")
             String s = reader.document(i).getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0];
-        	
             String f = reader.document(i).getValues("featureSURFHistogram")[0];
             SimpleFeature sf = new SimpleFeature();
             sf.setStringRepresentation(f);
@@ -371,7 +354,6 @@ class FileUtils {
     /**
      * The UTF-8 character set, used to decode octets in URLs.
      */
-    @SuppressWarnings("unused")
     private static final Charset UTF8 = Charset.forName("UTF-8");
 
     //-----------------------------------------------------------------------
