@@ -41,6 +41,7 @@
 
 package net.semanticmetadata.lire.imageanalysis;
 
+import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.utils.ImageUtils;
 import net.semanticmetadata.lire.utils.MetricsUtils;
 
@@ -73,7 +74,7 @@ public class JointOpponentHistogram extends Histogram implements LireFeature {
             for (int j = 0; j < histogram[i].length; j++)
                 histogram[i][j] = 0;
         }
-        WritableRaster grey = ImageUtils.convertImageToGrey(bimg).getRaster();
+        WritableRaster grey = ImageUtils.getGrayscaleImage(bimg).getRaster();
         WritableRaster raster = bimg.getRaster();
         int[] px = new int[3];
         int[] intens = new int[1];
@@ -191,5 +192,13 @@ public class JointOpponentHistogram extends Histogram implements LireFeature {
         return MetricsUtils.jsd(((JointOpponentHistogram) feature).descriptor, descriptor);
     }
 
+    @Override
+    public String getFeatureName() {
+        return "OpponentHistogram";
+    }
 
+    @Override
+    public String getFieldName() {
+        return DocumentBuilder.FIELD_NAME_OPPONENT_HISTOGRAM;
+    }
 }
