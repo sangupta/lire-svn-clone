@@ -41,15 +41,14 @@
 
 package net.semanticmetadata.lire.utils;
 
-import javax.imageio.ImageIO;
-import java.awt.*;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
 import java.awt.image.Kernel;
 import java.awt.image.WritableRaster;
-import java.io.FileOutputStream;
-import java.io.IOException;
 
 /**
  * Some little helper methods.<br>
