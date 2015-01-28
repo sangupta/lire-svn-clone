@@ -36,19 +36,20 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 07.08.13 12:03
+ * Updated: 07.11.14 14:26
  */
 
 package net.semanticmetadata.lire.benchmarking;
 
 import junit.framework.TestCase;
-import net.semanticmetadata.lire.*;
+import net.semanticmetadata.lire.DocumentBuilder;
+import net.semanticmetadata.lire.ImageSearchHits;
+import net.semanticmetadata.lire.ImageSearcher;
+import net.semanticmetadata.lire.ImageSearcherFactory;
 import net.semanticmetadata.lire.imageanalysis.*;
-import net.semanticmetadata.lire.imageanalysis.bovw.SiftFeatureHistogramBuilder;
-import net.semanticmetadata.lire.imageanalysis.bovw.SurfFeatureHistogramBuilder;
-import net.semanticmetadata.lire.imageanalysis.bovw.VLADBuilder;
-import net.semanticmetadata.lire.imageanalysis.joint.LocalBinaryPatternsAndOpponent;
-import net.semanticmetadata.lire.imageanalysis.spatialpyramid.SPLBP;
+import net.semanticmetadata.lire.imageanalysis.bovw.BOVWBuilder;
+import net.semanticmetadata.lire.imageanalysis.bovw.SimpleFeatureBOVWBuilder;
+import net.semanticmetadata.lire.imageanalysis.sift.Feature;
 import net.semanticmetadata.lire.impl.*;
 import net.semanticmetadata.lire.indexing.parallel.ParallelIndexer;
 import net.semanticmetadata.lire.utils.LuceneUtils;
@@ -62,7 +63,6 @@ import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
 import org.apache.lucene.util.Bits;
 
-import javax.swing.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -81,7 +81,7 @@ public class TestWang extends TestCase {
     // if you don't have the images you can get them here: http://wang.ist.psu.edu/docs/related.shtml
     private String testExtensive = "./testdata/wang-1000";
     private ChainedDocumentBuilder builder;
-    private int[] sampleQueries = {284, 77, 108, 416, 144, 534, 898, 104, 67, 10, 607, 165, 343, 973, 591, 659, 812, 231, 261, 224, 227, 914, 427, 810, 979, 716, 253, 708, 751, 269, 531, 699, 835, 370, 642, 504, 297, 970, 929, 20, 669, 434, 201, 9, 575, 631, 730, 7, 546, 816, 431, 235, 289, 111, 862, 184, 857, 624, 323, 393, 465, 905, 581, 626, 212, 459, 722, 322, 584, 540, 194, 704, 410, 267, 349, 371, 909, 403, 724, 573, 539, 812, 831, 600, 667, 672, 454, 873, 452, 48, 322, 424, 952, 277, 565, 388, 149, 966, 524, 36, 528, 75, 337, 655, 836, 698, 230, 259, 897, 652, 590, 757, 673, 937, 676, 650, 297, 434, 358, 789, 484, 975, 318, 12, 506, 38, 979, 732, 957, 904, 852, 635, 620, 28, 59, 732, 84, 788, 562, 913, 173, 508, 32, 16, 882, 847, 320, 185, 268, 230, 259, 931, 653, 968, 838, 906, 596, 140, 880, 847, 297, 77, 983, 536, 494, 530, 870, 922, 467, 186, 254, 727, 439, 241, 12, 947, 561, 160, 740, 705, 619, 571, 745, 774, 845, 507, 156, 936, 473, 830, 88, 66, 204, 737, 770, 445, 358, 707, 95, 349};
+    private int[] sampleQueries;// = {284, 77, 108, 416, 144, 534, 898, 104, 67, 10, 607, 165, 343, 973, 591, 659, 812, 231, 261, 224, 227, 914, 427, 810, 979, 716, 253, 708, 751, 269, 531, 699, 835, 370, 642, 504, 297, 970, 929, 20, 669, 434, 201, 9, 575, 631, 730, 7, 546, 816, 431, 235, 289, 111, 862, 184, 857, 624, 323, 393, 465, 905, 581, 626, 212, 459, 722, 322, 584, 540, 194, 704, 410, 267, 349, 371, 909, 403, 724, 573, 539, 812, 831, 600, 667, 672, 454, 873, 452, 48, 322, 424, 952, 277, 565, 388, 149, 966, 524, 36, 528, 75, 337, 655, 836, 698, 230, 259, 897, 652, 590, 757, 673, 937, 676, 650, 297, 434, 358, 789, 484, 975, 318, 12, 506, 38, 979, 732, 957, 904, 852, 635, 620, 28, 59, 732, 84, 788, 562, 913, 173, 508, 32, 16, 882, 847, 320, 185, 268, 230, 259, 931, 653, 968, 838, 906, 596, 140, 880, 847, 297, 77, 983, 536, 494, 530, 870, 922, 467, 186, 254, 727, 439, 241, 12, 947, 561, 160, 740, 705, 619, 571, 745, 774, 845, 507, 156, 936, 473, 830, 88, 66, 204, 737, 770, 445, 358, 707, 95, 349, 1003, 1012, 1024, 1073, 1066, 1010, 1020, 1023};
 
     public void testGenQueries() {
 
@@ -108,7 +108,7 @@ public class TestWang extends TestCase {
 //                builder.addBuilder(DocumentBuilderFactory.getJCDDocumentBuilder());
 //                builder.addBuilder(DocumentBuilderFactory.getJointHistogramDocumentBuilder());
 //                builder.addBuilder(DocumentBuilderFactory.getOpponentHistogramDocumentBuilder());
-                builder.addBuilder(DocumentBuilderFactory.getPHOGDocumentBuilder());
+//                builder.addBuilder(DocumentBuilderFactory.getPHOGDocumentBuilder());
 //                builder.addBuilder(DocumentBuilderFactory.getColorHistogramDocumentBuilder());
 //                builder.addBuilder(DocumentBuilderFactory.getScalableColorBuilder());
 
@@ -123,16 +123,17 @@ public class TestWang extends TestCase {
 //               builder.addBuilder(new SurfDocumentBuilder());
 //               builder.addBuilder(new MSERDocumentBuilder());
 //               builder.addBuilder(new SiftDocumentBuilder());
+               builder.addBuilder(new SimpleBuilder(new CEDD()));
 
 //                builder.addBuilder(new GenericDocumentBuilder(SPCEDD.class));
 //                builder.addBuilder(new GenericDocumentBuilder(SPFCTH.class));
 //                builder.addBuilder(new GenericDocumentBuilder(SPJCD.class));
 //                builder.addBuilder(new GenericDocumentBuilder(SPACC.class));
-                builder.addBuilder(new GenericDocumentBuilder(LocalBinaryPatterns.class));
+//                builder.addBuilder(new GenericDocumentBuilder(LocalBinaryPatterns.class));
 //                builder.addBuilder(new GenericDocumentBuilder(BinaryPatternsPyramid.class, "whog"));
-                builder.addBuilder(new GenericDocumentBuilder(LocalBinaryPatternsAndOpponent.class));
-                builder.addBuilder(new GenericDocumentBuilder(RotationInvariantLocalBinaryPatterns.class));
-                builder.addBuilder(new GenericDocumentBuilder(SPLBP.class));
+//                builder.addBuilder(new GenericDocumentBuilder(LocalBinaryPatternsAndOpponent.class));
+//                builder.addBuilder(new GenericDocumentBuilder(RotationInvariantLocalBinaryPatterns.class));
+//                builder.addBuilder(new GenericDocumentBuilder(SPLBP.class));
 
             }
         };
@@ -155,9 +156,13 @@ public class TestWang extends TestCase {
 //        System.out.println("-< Indexing " + images.size() + " files >--------------");
 //        indexFiles(images, builder, indexPath);
 //        in case of sift ...
-//        SiftFeatureHistogramBuilder sh1 = new SiftFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), 200, 8000);
+//        SiftFeatureHistogramBuilder sh1 = new SiftFeatureHistogramBuilder(DirectoryReader.open(FSDirectory.open(new File(indexPath))), 800, 500);
+//        sh1.setProgressMonitor(new ProgressMonitor(null, "", "", 0, 100));
 //        sh1.index();
-//        SurfFeatureHistogramBuilder sh = new SurfFeatureHistogramBuilder(DirectoryReader.open(FSDirectory.open(new File(indexPath))),800, 1000);
+
+        SimpleFeatureBOVWBuilder lodeb = new SimpleFeatureBOVWBuilder(DirectoryReader.open(FSDirectory.open(new File(indexPath))), new CEDD(), SimpleBuilder.KeypointDetector.CVSURF, 1000, 128);
+        lodeb.index();
+//        SurfFeatureHistogramBuilder sh = new SurfFeatureHistogramBuilder(DirectoryReader.open(FSDirectory.open(new File(indexPath))), 1000, 128);
 //        sh.setProgressMonitor(new ProgressMonitor(null, "", "", 0, 100));
 //        sh.index();
 //        MSERFeatureHistogramBuilder sh2 = new MSERFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), 200, 8000);
@@ -186,9 +191,9 @@ public class TestWang extends TestCase {
     }
 
     public void doParams(int numDocs, int numClusters) throws IOException {
-        SiftFeatureHistogramBuilder sh1 = new SiftFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), numDocs, numClusters);
+        BOVWBuilder sh1 = new BOVWBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), new Feature(), numDocs, numClusters);
         sh1.index();
-        SurfFeatureHistogramBuilder sh = new SurfFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), numDocs, numClusters);
+        BOVWBuilder sh = new BOVWBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), new SurfFeature(), numDocs, numClusters);
         sh.index();
         System.out.println("*******************************************");
         System.out.println("SiftFeatureHistogramBuilder sh1 = new SiftFeatureHistogramBuilder(IndexReader.open(FSDirectory.open(new File(indexPath))), " + numDocs + ", " + numClusters + ");");
@@ -239,7 +244,7 @@ public class TestWang extends TestCase {
 //        computeMAP(new GenericFastImageSearcher(1000, FCTH.class, true, reader), "FCTH", reader);
 //        computeMAP(new GenericFastImageSearcher(1000, JCD.class, true, reader), "JCD", reader);
 //        computeMAP(new GenericFastImageSearcher(1000, OpponentHistogram.class, true, reader), "OpponentHistogram", reader);
-        computeMAP(new GenericFastImageSearcher(1000, PHOG.class, DocumentBuilder.FIELD_NAME_PHOG, true, reader), "PHOG", reader);
+//        computeMAP(new GenericFastImageSearcher(1000, PHOG.class, DocumentBuilder.FIELD_NAME_PHOG, true, reader), "PHOG", reader);
 //        computeMAP(new GenericFastImageSearcher(1000, SimpleColorHistogram.class, true, reader), "RGB Color Histogram", reader);
 //        computeMAP(new GenericFastImageSearcher(1000, ScalableColor.class, true, reader), "Scalable Color", reader);
 
@@ -253,15 +258,17 @@ public class TestWang extends TestCase {
 //        computeMAP(new GenericFastImageSearcher(1000, SPJCD.class, true, reader), "SPJCD", reader);
 //        computeMAP(new GenericFastImageSearcher(1000, SPACC.class, true, reader), "SPACC", reader);
 //        computeMAP(new GenericFastImageSearcher(1000, BinaryPatternsPyramid.class, true, reader), "whog", reader);
-        computeMAP(new GenericFastImageSearcher(1000, LocalBinaryPatterns.class, true, reader), "lbp", reader);
-        computeMAP(new GenericFastImageSearcher(1000, LocalBinaryPatternsAndOpponent.class, true, reader), "jhl", reader);
-        computeMAP(new GenericFastImageSearcher(1000, RotationInvariantLocalBinaryPatterns.class, true, reader), "RILBP", reader);
-        computeMAP(new GenericFastImageSearcher(1000, SPLBP.class, true, reader), "SPLBP", reader);
+//        computeMAP(new GenericFastImageSearcher(1000, LocalBinaryPatterns.class, true, reader), "lbp", reader);
+//        computeMAP(new GenericFastImageSearcher(1000, LocalBinaryPatternsAndOpponent.class, true, reader), "jhl", reader);
+//        computeMAP(new GenericFastImageSearcher(1000, RotationInvariantLocalBinaryPatterns.class, true, reader), "RILBP", reader);
+//        computeMAP(new GenericFastImageSearcher(1000, SPLBP.class, true, reader), "SPLBP", reader);
 //        computeMAP(ImageSearcherFactory.createJpegCoefficientHistogramImageSearcher(1000), "JPEG Coeffs");
-//        computeMAP(new VisualWordsImageSearcher(1000, DocumentBuilder.FIELD_NAME_SURF_VISUAL_WORDS), "SURF BoVW", reader);
+//        computeMAP(new VisualWordsImageSearcher(1000, DocumentBuilder.FIELD_NAME_SURF + DocumentBuilder.FIELD_NAME_BOVW), "SURF BoVW", reader);
 //        computeMAP(new VisualWordsImageSearcher(1000, DocumentBuilder.FIELD_NAME_MSER_LOCAL_FEATURE_HISTOGRAM_VISUAL_WORDS), "MSER BoVW");
-//        computeMAP(new VisualWordsImageSearcher(1000, DocumentBuilder.FIELD_NAME_SIFT_VISUAL_WORDS), "SIFT BoVW");
-
+//        computeMAP(new VisualWordsImageSearcher(1000, (new CEDD()).getFieldName()+"LoDe"), "LoDe SC", reader);
+//        computeMAP(new GenericFastImageSearcher(1000, GenericByteLireFeature.class, (new CEDD()).getFieldName()+"LoDe_Hist", true, reader), "LoDe-generic", reader);
+//        computeMAP(new VisualWordsImageSearcher(1000, DocumentBuilder.FIELD_NAME_SIFT_VISUAL_WORDS), "SIFT BoVW", reader);
+        computeMAP(new GenericFastImageSearcher(1000, GenericDoubleLireFeature.class, (new CEDD()).getFieldName() + "LoDe_Hist", true, reader), "Simple CEDD L2", reader);
 //        computeMAP(new GenericFastImageSearcher(1000, GenericByteLireFeature.class, DocumentBuilder.FIELD_NAME_SURF_VLAD, true, reader), "VLAD-SURF", reader);
 
     }
@@ -271,8 +278,8 @@ public class TestWang extends TestCase {
         double map = 0;
         double errorRate = 0d;
         double precision10 = 0d;
-        double[] pr10cat = new double[10];
-        double[] pr10cnt = new double[10];
+        double[] pr10cat = new double[11];
+        double[] pr10cnt = new double[11];
         for (int i = 0; i < pr10cat.length; i++) {
             pr10cat[i] = 0d;
             pr10cnt[i] = 0d;
@@ -282,7 +289,12 @@ public class TestWang extends TestCase {
             int id = sampleQueries[i];
             String file = testExtensive + "/" + id + ".jpg";
             ms = System.currentTimeMillis();
-            ImageSearchHits hits = searcher.search(findDoc(reader, id + ".jpg"), reader);
+            Document doc = findDoc(reader, id + ".jpg");
+            if (doc==null) {
+                System.out.println("id = " + id);
+                continue;
+            }
+            ImageSearchHits hits = searcher.search(doc, reader);
             sum += (System.currentTimeMillis()-ms);
             int goodOnes = 0;
             double avgPrecision = 0d;

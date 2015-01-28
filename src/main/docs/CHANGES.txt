@@ -1,6 +1,104 @@
 CHANGES for LIRE
 ================
 
+2015-01-18
+==========
+  - Added custom implementation of a caching searcher
+  - fixed a performance issue in GenericFastImageSearcher
+  - refactored weka depending classes into a sample directory
+
+2015-01-16
+==========
+  - Made output of ParallelIndexer more readable.
+  - Added a getter to CEDD
+
+2015-01-15
+==========
+  - Updated documentation
+
+2015-01-02
+==========
+  - Moved documentation from online wiki to .md files. Using tool from mkdocs.org top generate static online site.
+
+2014-12-18
+==========
+  - Changed ParallelIndexer to using LinkedBlockingQueue and Files.readAllBytes(...) Note: JDK 7 only!
+
+2014-12-12
+==========
+  - Re-Factored handling of local features (Nektarios Anagnostopoulos)
+
+2014-11-28
+==========
+  - Added file read function to FileUtils.
+
+2014-11-28
+==========
+  - Changed dimension calculation to Math.round (instead of Math.floor) in image scaling in ImageUtils
+
+2014-11-28
+==========
+  - Bugfix in ScalableColorImpl from fix from Patti Spala for images with more than 3 bands, ie. alpha channel.
+
+2014-11-17
+==========
+  - Bugfix in cluster writing and reading (Nektarios Anagnostopoulos)
+  - Architectural re-arrangement of internal methods in BoVW implementation (Nektarios Anagnostopoulos)
+
+2014-11-07
+==========
+  - Updated to Lucene 4.10.2
+  - Added ExtractSingleFeature to simpleapplication.
+  - added OpenCV to lib (Nektarios Anagnostopoulos)
+  - Fixes to benchmarking and SIMPLE implementation (Nektarios Anagnostopoulos)
+
+2014-08-23
+==========
+  - Bug fixes from Nektarios Anagnostopoulos on CEDD
+  - Fixes on serialization of CEDD and FCTH
+
+2014-08-19
+==========
+  - Bug fixes from Nektarios Anagnostopoulos on CEDD
+  - Changes to SIMPLE and LoCate handling.
+
+2014-08-26
+==========
+  - Metric Spaces approach implemented and tested.
+
+2014-07-24
+==========
+  - Changed ID field in ChainedDocumentBuilder to StringField, based on the suggestion of Berthold Daum
+  - Added public SimpleImageSearchHits(Collection<SimpleResult> results, float maxDistance, boolean useSimilarityScore)
+    based on the suggestion of Berthold Daum
+  - Changed SimpleApplication classes to use the generic classes not the factories.
+
+2014-04-16
+==========
+  - Re-organized UCI Benchmarking
+  - Renamed LoDe to SIMPLE
+
+2014-04-16
+==========
+  - Added and tested LoDe (using global descriptors as local ones)
+  - Created and tested a LocalFeatureHistogramBuilder based on the
+    Apache Commons Math KMeans++ implementation
+  - Fixed several issues with net.semanticmetadata.lire.imageanalysis.bovw.BOVWBuilder
+
+2014-04-14
+==========
+  - Updated jopensurf to latest svn / git version.
+  - linked sift implementation to math3 package of Apache Math Commons
+  - fixed image cropping in ImageUtils. It didn't crop, but scaled
+  - added generic method to AbstractDocumentBuilder (arch simplification.)
+  - made CEDD work with smaller images (Tnx to Savvas Chatzichristofis)
+
+2014-03-05
+==========
+  - Fixed LireDemo bugs based on comments of Martha Larson's students from TU Delft:
+    * Re-sized large images to prevent out-of-memory errors
+    * Adapted error message to let people know they have to create a local feature histogram prior to searching for it.
+
 2013-10-29
 ==========
   - Doubled PHOG & Canny Edge Detector extraction speed (with Carlos Perez Lara)

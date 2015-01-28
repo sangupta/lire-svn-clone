@@ -36,12 +36,13 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 02.06.13 11:19
+ * Updated: 26.08.14 13:17
  */
 
 package net.semanticmetadata.lire.indexing.tools;
 
 import net.semanticmetadata.lire.DocumentBuilder;
+import net.semanticmetadata.lire.imageanalysis.CEDD;
 import net.semanticmetadata.lire.imageanalysis.ColorLayout;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
 import net.semanticmetadata.lire.impl.SimpleResult;
@@ -59,6 +60,10 @@ import java.util.zip.GZIPInputStream;
  * the Lucene Indexing classes) reads data files created by the {@link Extractor}. They are added to
  * a given index. Note that the index is not overwritten, but the documents are appended.
  *
+ * This one implements the proximity approach "metric spaces" based on the work of Giuseppe Amato.
+ * See Gennaro, Claudio, et al. "An approach to content-based image retrieval based on the Lucene search engine
+ * library." Research and Advanced Technology for Digital Libraries. Springer Berlin Heidelberg, 2010. 55-66.
+ *
  * @author Mathias Lux, mathias@juggle.at
  *         Date: 08.03.13
  *         Time: 14:28
@@ -73,7 +78,13 @@ public class ProximityHashingIndexor {
     HashSet<Integer> representativesID;
     ArrayList<LireFeature> representatives;
 
-    protected Class featureClass = ColorLayout.class;
+    // determines which feature is going to be hashed.
+    protected Class featureClass = CEDD.class;
+    private TreeSet<SimpleResult> hashingResultScoreDocs =  new TreeSet<SimpleResult>();
+    private float maxDistance;
+    private float tmpScore;
+    int maximumHits = 50; // decides when the list of representatives / stars is cut off. 50 is good enough for large data sets.
+    private int[] result = new int[maximumHits];
 
     public static void main(String[] args) throws IOException, IllegalAccessException, InstantiationException {
         ProximityHashingIndexor indexor = new ProximityHashingIndexor();
@@ -174,8 +185,9 @@ public class ProximityHashingIndexor {
                 if (verbose) System.out.printf("%d images found in the data file.\n", docCount);
                 int numberOfRepresentatives = 1000;  // TODO: clever selection.
                 // select a number of representative "fixed stars" randomly from file
-                if (numberOfRepresentatives > docCount / 10) numberOfRepresentatives = docCount / 10;
-                if (verbose) System.out.printf("Selecting %d representative images for hashing.\n", numberOfRepresentatives);
+                if (numberOfRepresentatives > Math.sqrt(docCount)) numberOfRepresentatives = (int) Math.sqrt(docCount);
+                if (verbose)
+                    System.out.printf("Selecting %d representative images for hashing.\n", numberOfRepresentatives);
                 representativesID = new HashSet<Integer>(numberOfRepresentatives);
                 while (representativesID.size() < numberOfRepresentatives) {
                     representativesID.add((int) Math.floor(Math.random() * (docCount - 1)));
@@ -209,7 +221,7 @@ public class ProximityHashingIndexor {
      * @throws ClassNotFoundException
      */
     private void readFile(IndexWriter indexWriter, File inputFile) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException {
-        BufferedInputStream in = new BufferedInputStream(new GZIPInputStream(new FileInputStream(inputFile)));
+        BufferedInputStream in = new BufferedInputStream(new FileInputStream(inputFile));
         byte[] tempInt = new byte[4];
         int tmp, tmpFeature, count = 0;
         byte[] temp = new byte[100 * 1024];
@@ -261,36 +273,56 @@ public class ProximityHashingIndexor {
             }
         } else if (run == 2) { // actual hashing: find the nearest representatives and put those as a hash into a document.
             if (feature.getClass().getCanonicalName().equals(featureClass.getCanonicalName())) { // it's a feature to be hashed
-                document.add(new TextField(featureFieldName + "_hash", SerializationUtils.arrayToString(getHashes(feature)), Field.Store.YES));
+                int[] hashes = getHashes(feature);
+                document.add(new TextField(featureFieldName + "_hash", createDocumentString(hashes, hashes.length), Field.Store.YES));
+                document.add(new TextField(featureFieldName + "_hash_q", createDocumentString(hashes, 10), Field.Store.YES));
             }
             document.add(new StoredField(featureFieldName, feature.getByteArrayRepresentation()));
         }
     }
 
+    /**
+     * Creates a virtual document from a result list from proximity hashing.
+     * 34, 32, 2 -> 34 34 34 32 32 2
+     *
+     * @param hashes
+     * @return
+     */
+    private String createDocumentString(int[] hashes, int length) {
+        StringBuilder sb = new StringBuilder(256);
+        for (int i = 0; i < length; i++) {
+            int hash = hashes[i];
+            for (int y = 0; y < (length - i); y++)
+                sb.append(" p" + hash);
+        }
+//        System.out.println("sb = " + sb);
+        return sb.toString().trim();
+    }
+
     private int[] getHashes(LireFeature feature) {
-        int maximumHits = 50;
-        int[] result = new int[maximumHits];
-        TreeSet<SimpleResult> resultScoreDocs = new TreeSet<SimpleResult>();
-        float maxDistance = 0f;
-        float tmpScore = 0f;
+        //result = new int[maximumHits];
+        hashingResultScoreDocs.clear();
+        maxDistance = 0f;
+        tmpScore = 0f;
         int rep = 0;
+        LireFeature tmpFeature;
         for (Iterator<LireFeature> iterator = representatives.iterator(); iterator.hasNext(); ) {
-            LireFeature repFeature = iterator.next();
-            tmpScore = repFeature.getDistance(feature);
-            if (resultScoreDocs.size() < maximumHits) {
-                resultScoreDocs.add(new SimpleResult(tmpScore, null, rep));
+            tmpFeature = iterator.next();
+            tmpScore = tmpFeature.getDistance(feature);
+            if (hashingResultScoreDocs.size() < maximumHits) {
+                hashingResultScoreDocs.add(new SimpleResult(tmpScore, null, rep));
                 maxDistance = Math.max(maxDistance, tmpScore);
             } else if (tmpScore < maxDistance) {
-                resultScoreDocs.add(new SimpleResult(tmpScore, null, rep));
+                hashingResultScoreDocs.add(new SimpleResult(tmpScore, null, rep));
             }
-            while (resultScoreDocs.size() > maximumHits) {
-                resultScoreDocs.remove(resultScoreDocs.last());
-                maxDistance = resultScoreDocs.last().getDistance();
+            while (hashingResultScoreDocs.size() > maximumHits) {
+                hashingResultScoreDocs.remove(hashingResultScoreDocs.last());
+                maxDistance = hashingResultScoreDocs.last().getDistance();
             }
             rep++;
         }
         rep = 0;
-        for (Iterator<SimpleResult> iterator = resultScoreDocs.iterator(); iterator.hasNext(); ) {
+        for (Iterator<SimpleResult> iterator = hashingResultScoreDocs.iterator(); iterator.hasNext(); ) {
             SimpleResult next = iterator.next();
             result[rep] = next.getIndexNumber();
             rep++;

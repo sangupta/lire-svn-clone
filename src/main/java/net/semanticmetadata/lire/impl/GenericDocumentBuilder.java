@@ -49,9 +49,9 @@ import net.semanticmetadata.lire.indexing.hashing.LocalitySensitiveHashing;
 import net.semanticmetadata.lire.utils.ImageUtils;
 import net.semanticmetadata.lire.utils.SerializationUtils;
 import org.apache.lucene.document.*;
+import org.apache.lucene.util.BytesRef;
 
 import java.awt.image.BufferedImage;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
@@ -88,7 +88,7 @@ public class GenericDocumentBuilder extends AbstractDocumentBuilder {
         try {
             BitSampling.readHashFunctions();
 //            LocalitySensitiveHashing.readHashFunctions();
-        } catch (IOException e) {
+        } catch (Exception e) {
             System.err.println("Could not read hashes from file when first creating a GenericDocumentBuilder instance.");
             e.printStackTrace();
         }
@@ -253,7 +253,7 @@ public class GenericDocumentBuilder extends AbstractDocumentBuilder {
             logger.fine("Extraction finished [" + descriptorClass.getName() + "].");
 
             // TODO: Stored field is compressed and upon search decompression takes a lot of time (> 50% with a small index with 50k images). Find something else ...
-            result[0] = new StoredField(fieldName, lireFeature.getByteArrayRepresentation());
+            result[0] = new StoredField(fieldName, new BytesRef(lireFeature.getByteArrayRepresentation()));
 
             // if BitSampling is an issue we add a field with the given hashFunctionsFileName and the suffix "hash":
             if (hashingEnabled) {

@@ -36,15 +36,14 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 16.07.13 15:44
+ * Updated: 16.01.15 09:48
  */
 
 package net.semanticmetadata.lire.indexing.parallel;
 
-import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.DocumentBuilderFactory;
-import net.semanticmetadata.lire.imageanalysis.*;
-import net.semanticmetadata.lire.imageanalysis.joint.JointHistogram;
+import net.semanticmetadata.lire.imageanalysis.CEDD;
+import net.semanticmetadata.lire.imageanalysis.OpponentHistogram;
 import net.semanticmetadata.lire.impl.ChainedDocumentBuilder;
 import net.semanticmetadata.lire.impl.GenericDocumentBuilder;
 import net.semanticmetadata.lire.indexing.LireCustomCodec;
@@ -59,24 +58,31 @@ import org.apache.lucene.store.FSDirectory;
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Stack;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.logging.Logger;
 
 /**
  * This class allows for creating indexes in a parallel manner. The class
  * at hand reads files from the disk and acts as producer, while several consumer
  * threads extract the features from the given files.
  *
+ * To use this override the method {@link ParallelIndexer#addBuilders} to add your own features.
+ * Check the source of this class -- the main method -- to get an idea.
+ *
  * @author Mathias Lux, mathias@juggle.at, 15.04.13
  */
 
 public class ParallelIndexer implements Runnable {
+    private Logger log = Logger.getLogger(this.getClass().getName());
     private int numberOfThreads = 10;
     private String indexPath;
     private String imageDirectory;
-    Stack<WorkItem> images = new Stack<WorkItem>();
+//    Stack<WorkItem> images = new Stack<WorkItem>();
     IndexWriter writer;
     File imageList = null;
     boolean ended = false;
@@ -86,6 +92,7 @@ public class ParallelIndexer implements Runnable {
     private IndexWriterConfig.OpenMode openMode = IndexWriterConfig.OpenMode.CREATE_OR_APPEND;
     // all xx seconds a status message will be displayed
     private int monitoringInterval = 30;
+    private LinkedBlockingQueue<WorkItem> queue = new LinkedBlockingQueue<WorkItem>(100);
 
     public static void main(String[] args) {
         String indexPath = null;
@@ -135,13 +142,16 @@ public class ParallelIndexer implements Runnable {
             p = new ParallelIndexer(numThreads, indexPath, imageList) {
                 @Override
                 public void addBuilders(ChainedDocumentBuilder builder) {
-                    builder.addBuilder(new GenericDocumentBuilder(PHOG.class, DocumentBuilder.FIELD_NAME_PHOG, true));
-                    builder.addBuilder(new GenericDocumentBuilder(JCD.class, DocumentBuilder.FIELD_NAME_JCD, true));
-                    builder.addBuilder(new GenericDocumentBuilder(OpponentHistogram.class, DocumentBuilder.FIELD_NAME_OPPONENT_HISTOGRAM, true));
-                    builder.addBuilder(new GenericDocumentBuilder(JointHistogram.class, DocumentBuilder.FIELD_NAME_JOINT_HISTOGRAM, true));
-                    builder.addBuilder(new GenericDocumentBuilder(ColorLayout.class, DocumentBuilder.FIELD_NAME_COLORLAYOUT, true));
-                    builder.addBuilder(new GenericDocumentBuilder(EdgeHistogram.class, DocumentBuilder.FIELD_NAME_EDGEHISTOGRAM, true));
-                    builder.addBuilder(new GenericDocumentBuilder(SimpleColorHistogram.class, DocumentBuilder.FIELD_NAME_COLORHISTOGRAM, true));
+                    builder.addBuilder(new GenericDocumentBuilder(CEDD.class, false));
+                    builder.addBuilder(new GenericDocumentBuilder(OpponentHistogram.class, false));
+//                    builder.addBuilder(new GenericDocumentBuilder(PHOG.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(JCD.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(OpponentHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(JointHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(ColorLayout.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(EdgeHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(SimpleColorHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(AutoColorCorrelogram.class, true));
                 }
             };
 
@@ -149,13 +159,16 @@ public class ParallelIndexer implements Runnable {
             p = new ParallelIndexer(numThreads, indexPath, imageDirectory) {
                 @Override
                 public void addBuilders(ChainedDocumentBuilder builder) {
-                    builder.addBuilder(new GenericDocumentBuilder(PHOG.class, DocumentBuilder.FIELD_NAME_PHOG, true));
-                    builder.addBuilder(new GenericDocumentBuilder(JCD.class, DocumentBuilder.FIELD_NAME_JCD, true));
-                    builder.addBuilder(new GenericDocumentBuilder(OpponentHistogram.class, DocumentBuilder.FIELD_NAME_OPPONENT_HISTOGRAM, true));
-                    builder.addBuilder(new GenericDocumentBuilder(JointHistogram.class, DocumentBuilder.FIELD_NAME_JOINT_HISTOGRAM, true));
-                    builder.addBuilder(new GenericDocumentBuilder(ColorLayout.class, DocumentBuilder.FIELD_NAME_COLORLAYOUT, true));
-                    builder.addBuilder(new GenericDocumentBuilder(EdgeHistogram.class, DocumentBuilder.FIELD_NAME_EDGEHISTOGRAM, true));
-                    builder.addBuilder(new GenericDocumentBuilder(SimpleColorHistogram.class, DocumentBuilder.FIELD_NAME_COLORHISTOGRAM, true));
+                    builder.addBuilder(new GenericDocumentBuilder(CEDD.class, false));
+                    builder.addBuilder(new GenericDocumentBuilder(OpponentHistogram.class, false));
+//                    builder.addBuilder(new GenericDocumentBuilder(PHOG.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(JCD.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(OpponentHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(JointHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(ColorLayout.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(EdgeHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(SimpleColorHistogram.class, true));
+//                    builder.addBuilder(new GenericDocumentBuilder(AutoColorCorrelogram.class, true));
                 }
             };
         }
@@ -177,6 +190,7 @@ public class ParallelIndexer implements Runnable {
     }
 
     /**
+     * In this case its appended to the index if there is one already in place.
      * @param numberOfThreads
      * @param indexPath
      * @param imageDirectory  a directory containing all the images somewhere in the child hierarchy.
@@ -192,7 +206,7 @@ public class ParallelIndexer implements Runnable {
      * @param numberOfThreads
      * @param indexPath
      * @param imageDirectory
-     * @param overWrite overwrite (instead of append) the index.
+     * @param overWrite overwrite (instead of append) the index. Set it to true if you want to delete the old index before adding new stuff.
      */
     public ParallelIndexer(int numberOfThreads, String indexPath, String imageDirectory, boolean overWrite) {
         this.numberOfThreads = numberOfThreads;
@@ -273,10 +287,15 @@ public class ParallelIndexer implements Runnable {
                 iterator.next().join();
             }
             long l1 = System.currentTimeMillis() - l;
-            System.out.println("Analyzed " + overallCount + " images in " + l1 / 1000 + " seconds, ~" + ((overallCount>0)?(l1 / overallCount):"n.a.") + " ms each.");
+            int seconds = (int) (l1 / 1000);
+            int minutes = seconds / 60;
+            seconds = seconds % 60;
+            // System.out.println("Analyzed " + overallCount + " images in " + seconds + " seconds, ~" + ((overallCount>0)?(l1 / overallCount):"n.a.") + " ms each.");
+            System.out.printf("Analyzed %d images in %03d:%02d ~ %3.2f ms each.\n", overallCount, minutes, seconds, ((overallCount > 0) ? ((float) l1 / (float) overallCount) : -1f));
             writer.commit();
             writer.close();
             threadFinished = true;
+            // add local feature hist here
         } catch (IOException e) {
             e.printStackTrace();
         } catch (InterruptedException e) {
@@ -314,7 +333,13 @@ public class ParallelIndexer implements Runnable {
                 try {
                     // print the current status:
                     long time = System.currentTimeMillis() - ms;
-                    System.out.println("Analyzed " + overallCount + " images in " + time / 1000 + " seconds, " + ((overallCount>0)?(time / overallCount):"n.a.") + " ms each ("+images.size()+" images currently in queue).");
+                    int seconds = (int) (time / 1000);
+                    int minutes = seconds / 60;
+                    seconds = seconds % 60;
+                    // System.out.println("Analyzed " + overallCount + " images in " + seconds + " seconds, ~" + ((overallCount>0)?(l1 / overallCount):"n.a.") + " ms each.");
+                    System.out.printf("Analyzed %d images in %03d:%02d ~ %3.2f ms each. (queue size is %d)\n", 
+                            overallCount, minutes, seconds, ((overallCount > 0) ? ((float) time / (float) overallCount) : -1f), queue.size());
+//                    System.out.println("Analyzed " + overallCount + " images in " + time / 1000 + " seconds, " + ((overallCount>0)?(time / overallCount):"n.a.") + " ms each ("+queue.size()+" images currently in queue).");
                     Thread.sleep(1000 * monitoringInterval); // wait xx seconds
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -332,44 +357,22 @@ public class ParallelIndexer implements Runnable {
                 String path = iterator.next();
                 File next = new File(path);
                 try {
-//                    tmpImage = ImageIO.read(next);
-                    int fileSize = (int) next.length();
-                    byte[] buffer = new byte[fileSize];
-                    FileInputStream fis = new FileInputStream(next);
-                    fis.read(buffer);
-                    synchronized (images) {
-                        path = next.getCanonicalPath();
-                        // TODO: add re-write rule for path here!
-//                        path = path.replace("E:\\WIPO-conv\\convert", "");
-//                        path = path.replace("D:\\Temp\\WIPO-US\\jpg_", "");
-                        // this helps a lot for slow computers ....
-                        if (images.size()>500) images.wait(5000);
-                        images.add(new WorkItem(path, buffer));
-                        tmpSize = images.size();
-                        images.notifyAll();
-                    }
-                    try {
-                        // it's actually hard to manage the amount of memory used to cache images.
-                        // On faster computers it turns out to be good to have a big cache, on
-                        // slower ones the cache poses a serious problem and leads to memory and GC exceptions.
-                        // iy you encounter still memory errors, then try to use more threads.
-                        if (tmpSize > 500) Thread.sleep(50);
-                        else if (tmpSize > 1000) Thread.sleep(5000);
-                        else if (tmpSize > 2000) Thread.sleep(50000);
-                        else if (tmpSize > 3000) Thread.sleep(500000);
-                        else Thread.sleep(5);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    byte[] buffer = Files.readAllBytes(Paths.get(path)); // JDK 7 only!
+                    path = next.getCanonicalPath();
+                    queue.put(new WorkItem(path, buffer));
                 } catch (Exception e) {
                     System.err.println("Could not open " + path + ". " + e.getMessage());
-//                    e.printStackTrace();
                 }
             }
-            synchronized (images) {
-                ended = true;
-                images.notifyAll();
+            for (int i = 0; i<numberOfThreads*3; i++)  {
+                String s = null; byte[] b = null;
+                try {
+                    queue.put(new WorkItem(s, b));
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
+            ended = true;
         }
     }
 
@@ -388,36 +391,59 @@ public class ParallelIndexer implements Runnable {
 
         public void run() {
             while (!locallyEnded) {
-                synchronized (images) {
-                    // we wait for the stack to be either filled or empty & not being filled any more.
-                    while (images.empty() && !ended) {
-                        try {
-                            images.wait(10);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                    // make sure the thread locally knows that the end has come (outer loop)
-                    if (images.empty() && ended)
+                tmp = null;
+                try {
+                    tmp = queue.take();
+                    if (tmp.getFileName() == null) {
                         locallyEnded = true;
-                    // well the last thing we want is an exception in the very last round.
-                    if (!images.empty() && !locallyEnded) {
-                        tmp = images.pop();
+                    } else {
                         count++;
                         overallCount++;
                     }
+                } catch (InterruptedException e) {
+                    // e.printStackTrace();
+                    log.severe(e.getMessage());
                 }
                 try {
-                    if (!locallyEnded) {
+                    if (!locallyEnded && tmp!=null) {
                         ByteArrayInputStream b = new ByteArrayInputStream(tmp.getBuffer());
                         BufferedImage img = ImageIO.read(b);
                         Document d = builder.createDocument(img, tmp.getFileName());
                         writer.addDocument(d);
                     }
-                } catch (Exception e) {
-                    System.err.println("[ParallelIndexer] Could not handle file " + tmp.getFileName() + ": "  + e.getMessage());
-                    e.printStackTrace();
+                } catch (IOException e) {
+                    // e.printStackTrace();
+                    log.severe(e.getMessage());
                 }
+//                synchronized (images) {
+//                    // we wait for the stack to be either filled or empty & not being filled any more.
+//                    while (images.empty() && !ended) {
+//                        try {
+//                            images.wait(10);
+//                        } catch (InterruptedException e) {
+//                            e.printStackTrace();
+//                        }
+//                    }
+//                    // make sure the thread locally knows that the end has come (outer loop)
+//                    if (images.empty() && ended)
+//                        locallyEnded = true;
+//                    // well the last thing we want is an exception in the very last round.
+//                    if (!images.empty() && !locallyEnded) {
+//                        count++;
+//                        overallCount++;
+//                    }
+//                }
+//                try {
+//                    if (!locallyEnded) {
+//                        ByteArrayInputStream b = new ByteArrayInputStream(tmp.getBuffer());
+//                        BufferedImage img = ImageIO.read(b);
+//                        Document d = builder.createDocument(img, tmp.getFileName());
+//                        writer.addDocument(d);
+//                    }
+//                } catch (Exception e) {
+//                    System.err.println("[ParallelIndexer] Could not handle file " + tmp.getFileName() + ": "  + e.getMessage());
+//                    e.printStackTrace();
+//                }
             }
 //            System.out.println("Images analyzed: " + count);
         }

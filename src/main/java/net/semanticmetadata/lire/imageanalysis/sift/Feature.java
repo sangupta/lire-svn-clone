@@ -42,7 +42,6 @@ package net.semanticmetadata.lire.imageanalysis.sift;
 
 
 import net.semanticmetadata.lire.DocumentBuilder;
-import net.semanticmetadata.lire.imageanalysis.Histogram;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
 import net.semanticmetadata.lire.utils.MetricsUtils;
 import net.semanticmetadata.lire.utils.SerializationUtils;
@@ -56,7 +55,7 @@ import java.util.logging.Logger;
 /**
  * SIFT feature container
  */
-public class Feature extends Histogram implements Comparable<Feature>, Serializable, LireFeature {
+public class Feature  implements Comparable<Feature>, Serializable, LireFeature {
     /**
      *
      */
@@ -65,6 +64,7 @@ public class Feature extends Histogram implements Comparable<Feature>, Serializa
     public float scale;
     public float orientation;
     public float[] location;
+    double[] descriptor;
 //    public float[] descriptor;
 
     /**
@@ -87,6 +87,21 @@ public class Feature extends Histogram implements Comparable<Feature>, Serializa
      */
     public int compareTo(Feature f) {
         return scale < f.scale ? 1 : scale == f.scale ? 0 : -1;
+    }
+
+    /**
+     * Method to convert SIFT to RootSIFT as described in Arandjelovic, Relja, and Andrew Zisserman.
+     * "Three things everyone should know to improve object retrieval." Computer Vision and Pattern
+     * Recognition (CVPR), 2012 IEEE Conference on. IEEE, 2012.
+     */
+    public void toRootSIFT() {
+        double max = 0;
+        for (int i = 0; i < descriptor.length; i++) {
+            max = Math.max(max, Math.abs(descriptor[i]));
+        }
+        for (int i = 0; i < descriptor.length; i++) {
+            descriptor[i] = Math.sqrt(Math.abs(descriptor[i])/max);
+        }
     }
 
     public float descriptorDistance(Feature f) {
@@ -154,7 +169,7 @@ public class Feature extends Histogram implements Comparable<Feature>, Serializa
     }
 
     public void extract(BufferedImage bimg) {
-        throw new UnsupportedOperationException("No implemented!");
+        throw new UnsupportedOperationException("Not implemented!");
     }
 
     /**

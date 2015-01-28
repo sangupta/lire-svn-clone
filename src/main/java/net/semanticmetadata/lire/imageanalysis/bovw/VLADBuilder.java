@@ -44,13 +44,15 @@ import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.clustering.Cluster;
 import net.semanticmetadata.lire.clustering.KMeans;
 import net.semanticmetadata.lire.clustering.ParallelKMeans;
-import net.semanticmetadata.lire.imageanalysis.GenericByteLireFeature;
-import net.semanticmetadata.lire.imageanalysis.Histogram;
-import net.semanticmetadata.lire.imageanalysis.LireFeature;
-import net.semanticmetadata.lire.imageanalysis.SurfFeature;
+import net.semanticmetadata.lire.imageanalysis.*;
+import net.semanticmetadata.lire.imageanalysis.opencvfeatures.CvSiftFeature;
+import net.semanticmetadata.lire.imageanalysis.sift.Feature;
 import net.semanticmetadata.lire.utils.LuceneUtils;
+import net.semanticmetadata.lire.utils.SerializationUtils;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StoredField;
+import org.apache.lucene.document.TextField;
 import org.apache.lucene.index.*;
 import org.apache.lucene.util.Bits;
 
@@ -72,30 +74,37 @@ import java.util.LinkedList;
  */
 public class VLADBuilder {
     public static boolean DELETE_LOCAL_FEATURES = true;
-    protected String localFeatureFieldName = DocumentBuilder.FIELD_NAME_SURF;
-    protected String vladFieldName = DocumentBuilder.FIELD_NAME_SURF_VLAD;
-    //    protected String localFeatureHistFieldName = DocumentBuilder.FIELD_NAME_SURF_LOCAL_FEATURE_HISTOGRAM;
-    protected String clusterFile = "./clusters-vlad.dat";
+    protected String localFeatureFieldName;
+    protected String vladFieldName;
+    protected String vladHistFieldName;
+    protected LireFeature lireFeature;
+    protected String clusterFile;
     IndexReader reader;
     DecimalFormat df = (DecimalFormat) NumberFormat.getNumberInstance();
     // number of documents used to build the vocabulary / clusters.
-    private int numDocsForVocabulary = 1000;
-    private int numClusters = 16;
+    private int numDocsForVocabulary = 500;
+    private int numClusters = 64;
     private Cluster[] clusters = null;
     private ProgressMonitor pm = null;
     private boolean useParallelClustering = true;
 
 
+    /**
+     *
+     * @param reader
+     * @deprecated
+     */
     public VLADBuilder(IndexReader reader) {
         this.reader = reader;
     }
 
     /**
-     * Creates a new instance of the LocalFeatureHistogramBuilder using the given reader. The numDocsForVocabulary
+     * Creates a new instance of the BOVWBuilder using the given reader. The numDocsForVocabulary
      * indicates how many documents of the index are used to build the vocabulary (clusters).
      *
      * @param reader               the reader used to open the Lucene index,
      * @param numDocsForVocabulary gives the number of documents for building the vocabulary (clusters).
+     * @deprecated
      */
     public VLADBuilder(IndexReader reader, int numDocsForVocabulary) {
         this.reader = reader;
@@ -103,7 +112,7 @@ public class VLADBuilder {
     }
 
     /**
-     * Creates a new instance of the LocalFeatureHistogramBuilder using the given reader. The numDocsForVocabulary
+     * Creates a new instance of the BOVWBuilder using the given reader. The numDocsForVocabulary
      * indicates how many documents of the index are used to build the vocabulary (clusters). The numClusters gives
      * the number of clusters k-means should find. Note that this number should be lower than the number of features,
      * otherwise an exception will be thrown while indexing.
@@ -111,11 +120,67 @@ public class VLADBuilder {
      * @param reader               the index reader
      * @param numDocsForVocabulary the number of documents that should be sampled for building the visual vocabulary
      * @param numClusters          the size of the visual vocabulary
+     * @deprecated
      */
     public VLADBuilder(IndexReader reader, int numDocsForVocabulary, int numClusters) {
         this.numDocsForVocabulary = numDocsForVocabulary;
         this.numClusters = numClusters;
         this.reader = reader;
+    }
+
+    /**
+     * Creates a new instance of the BOVWBuilder using the given reader. The numDocsForVocabulary
+     * indicates how many documents of the index are used to build the vocabulary (clusters). The numClusters gives
+     * the number of clusters k-means should find. Note that this number should be lower than the number of features,
+     * otherwise an exception will be thrown while indexing. TODO: write
+     *
+     * @param reader               the index reader
+     * @param lireFeature          lireFeature used
+     */
+    public VLADBuilder(IndexReader reader, LireFeature lireFeature) {
+        this.reader = reader;
+        this.lireFeature = lireFeature;
+    }
+
+    /**
+     * Creates a new instance of the BOVWBuilder using the given reader. The numDocsForVocabulary
+     * indicates how many documents of the index are used to build the vocabulary (clusters). The numClusters gives
+     * the number of clusters k-means should find. Note that this number should be lower than the number of features,
+     * otherwise an exception will be thrown while indexing. TODO: write
+     *
+     * @param reader               the index reader
+     * @param numDocsForVocabulary the number of documents that should be sampled for building the visual vocabulary
+     * @param lireFeature          lireFeature used
+     */
+    public VLADBuilder(IndexReader reader, LireFeature lireFeature, int numDocsForVocabulary) {
+        this.numDocsForVocabulary = numDocsForVocabulary;
+        this.reader = reader;
+        this.lireFeature = lireFeature;
+    }
+
+    /**
+     * Creates a new instance of the BOVWBuilder using the given reader. The numDocsForVocabulary
+     * indicates how many documents of the index are used to build the vocabulary (clusters). The numClusters gives
+     * the number of clusters k-means should find. Note that this number should be lower than the number of features,
+     * otherwise an exception will be thrown while indexing. TODO: write
+     *
+     * @param reader               the index reader
+     * @param numDocsForVocabulary the number of documents that should be sampled for building the visual vocabulary
+     * @param numClusters          the size of the visual vocabulary
+     * @param lireFeature          lireFeature used
+     */
+    public VLADBuilder(IndexReader reader, LireFeature lireFeature, int numDocsForVocabulary, int numClusters) {
+        this.numDocsForVocabulary = numDocsForVocabulary;
+        this.numClusters = numClusters;
+        this.reader = reader;
+        this.lireFeature = lireFeature;
+    }
+
+    protected void init() {
+        localFeatureFieldName = lireFeature.getFieldName();
+        vladFieldName = lireFeature.getFieldName() + DocumentBuilder.FIELD_NAME_VLAD;
+        vladHistFieldName = lireFeature.getFieldName() + DocumentBuilder.FIELD_NAME_VLAD_VECTOR;
+        clusterFile = "./clusters-vlad" + lireFeature.getFeatureName() + ".dat";
     }
 
     /**
@@ -127,6 +192,9 @@ public class VLADBuilder {
      * @throws java.io.IOException
      */
     public void index() throws IOException {
+        init();
+//        localFeatureFieldName = getFeatureInstance().getFieldName();
+//        vladFieldName = localFeatureFieldName + "vlad";
         df.setMaximumFractionDigits(3);
         // find the documents for building the vocabulary:
         HashSet<Integer> docIDs = selectVocabularyDocs();
@@ -147,7 +215,7 @@ public class VLADBuilder {
             for (int j = 0; j < fields.length; j++) {
                 LireFeature f = getFeatureInstance();
                 f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
-                features.add(((Histogram) f).descriptor);
+                features.add(((Histogram) f).getDoubleHistogram());
             }
             k.addImage(file, features);
         }
@@ -186,7 +254,7 @@ public class VLADBuilder {
         System.out.println("Threshold = " + threshold);
         int cstep = 3;
         // maximum of 14 steps.
-        while (Math.abs(newStress - laststress) > threshold && cstep < 115) {
+        while (Math.abs(newStress - laststress) > threshold && cstep < 12) {
             System.out.println(getDuration(time) + " -> Next step. Stress difference ~ |" + (int) newStress + " - " + (int) laststress + "| = " + df.format(Math.abs(newStress - laststress)));
             time = System.currentTimeMillis();
             laststress = newStress;
@@ -208,7 +276,7 @@ public class VLADBuilder {
         //  create & store histograms:
         System.out.println("Creating histograms ...");
         time = System.currentTimeMillis();
-        int[] tmpHist = new int[numClusters];
+//        int[] tmpHist = new int[numClusters];
         IndexWriter iw = LuceneUtils.createIndexWriter(((DirectoryReader) reader).directory(), true, LuceneUtils.AnalyzerType.WhitespaceAnalyzer, 256d);
         if (pm != null) { // set to 50 of 100 after clustering.
             pm.setProgress(50);
@@ -260,42 +328,21 @@ public class VLADBuilder {
      * @throws IOException
      */
     public void indexMissing() throws IOException {
+        init();
         // Reading clusters from disk:
         clusters = Cluster.readClusters(clusterFile);
         //  create & store histograms:
         System.out.println("Creating histograms ...");
-//        int[] tmpHist = new int[numClusters];
         LireFeature f = getFeatureInstance();
         IndexWriter iw = LuceneUtils.createIndexWriter(((DirectoryReader) reader).directory(), true, LuceneUtils.AnalyzerType.WhitespaceAnalyzer);
         for (int i = 0; i < reader.maxDoc(); i++) {
 //            if (!reader.isDeleted(i)) {
-            Document d = reader.document(i);
-            double[] vlad = null;
-
-            // Only if there are no values yet:
-            if (d.getValues(vladFieldName) == null || d.getValues(vladFieldName).length == 0) {
-                IndexableField[] fields = d.getFields(localFeatureFieldName);
-                // find the appropriate cluster for each feature:
-                for (int j = 0; j < fields.length; j++) {
-                    f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
-                    if (vlad == null) {  // init vlad if it is null.
-                        vlad = new double[clusters.length * f.getDoubleHistogram().length];
-                        Arrays.fill(vlad, 0d);
-                    }
-                    int clusterIndex = clusterForFeature((Histogram) f);
-                    double[] mean = clusters[clusterIndex].getMean();
-                    for (int k = 0; k < f.getDoubleHistogram().length; k++) {
-                        vlad[clusterIndex * f.getDoubleHistogram().length + k] += f.getDoubleHistogram()[k] - mean[k];
-                    }
-
+                Document d = reader.document(i);
+                // Only if there are no values yet:
+                if (d.getValues(vladFieldName) == null || d.getValues(vladFieldName).length == 0) {
+                    createVisualWords(d, f);
+                    iw.updateDocument(new Term(DocumentBuilder.FIELD_NAME_IDENTIFIER, d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]), d);
                 }
-                normalize(vlad);
-                GenericByteLireFeature feat = new GenericByteLireFeature();
-                feat.setData(vlad);
-//                System.out.println(feat.getStringRepresentation());
-                d.add(new StoredField(vladFieldName, feat.getByteArrayRepresentation()));
-                iw.updateDocument(new Term(DocumentBuilder.FIELD_NAME_IDENTIFIER, d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]), d);
-            }
 //            }
         }
         iw.commit();
@@ -312,29 +359,9 @@ public class VLADBuilder {
      */
     public Document getVisualWords(Document d) throws IOException {  // TODO: Adapt to VLAD!
         clusters = Cluster.readClusters(clusterFile);
-        double[] vlad = null;
         LireFeature f = getFeatureInstance();
-        IndexableField[] fields = d.getFields(localFeatureFieldName);
-        // find the appropriate cluster for each feature:
-        for (int j = 0; j < fields.length; j++) {
-            f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
-            if (vlad == null) {
-                vlad = new double[clusters.length * f.getDoubleHistogram().length];
-                Arrays.fill(vlad, 0d);
-            }
-            int clusterIndex = clusterForFeature((Histogram) f);
-            double[] mean = clusters[clusterIndex].getMean();
-            for (int k = 0; k < f.getDoubleHistogram().length; k++) {
-                vlad[clusterIndex * f.getDoubleHistogram().length + k] += f.getDoubleHistogram()[k] - mean[k];
-            }
+        createVisualWords(d, f);
 
-        }
-        normalize(vlad);
-        GenericByteLireFeature feat = new GenericByteLireFeature();
-        feat.setData(vlad);
-        d.add(new StoredField(vladFieldName, feat.getByteArrayRepresentation()));
-//        d.add(new StringField(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist), Field.Store.YES));
-        d.removeFields(localFeatureFieldName);
         return d;
     }
 
@@ -344,8 +371,11 @@ public class VLADBuilder {
         for (int i = 0; i < histogram.length; i++) {
             sumOfSquares += histogram[i] * histogram[i];
         }
-        for (int i = 0; i < histogram.length; i++) {
-            histogram[i] = Math.floor(16d * histogram[i] / Math.sqrt(sumOfSquares));
+        if (sumOfSquares>0) {
+            for (int i = 0; i < histogram.length; i++) {
+//            histogram[i] = Math.floor(16d * histogram[i] / Math.sqrt(sumOfSquares));
+                histogram[i] = histogram[i] / Math.sqrt(sumOfSquares);
+            }
         }
 /*        // L1
         double min = Double.MAX_VALUE, max = Double.MIN_VALUE;
@@ -384,8 +414,8 @@ public class VLADBuilder {
         for (int i = 0; i < hist.length; i++) {
             int visualWordIndex = hist[i];
             for (int j = 0; j < visualWordIndex; j++) {
-                sb.append('v');
-                sb.append(i);
+                // sb.append('v');
+                sb.append(Integer.toHexString(i));
                 sb.append(' ');
             }
         }
@@ -421,8 +451,20 @@ public class VLADBuilder {
         return result;
     }
 
+//    protected LireFeature getFeatureInstance() {
+//        return new SurfFeature();
+//    }
+
     protected LireFeature getFeatureInstance() {
-        return new SurfFeature();
+        LireFeature result = null;
+        try {
+            result =  lireFeature.getClass().newInstance();
+        } catch (InstantiationException e) {
+            e.printStackTrace();
+        } catch (IllegalAccessException e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
     private String getDuration(double time) {
@@ -468,47 +510,11 @@ public class VLADBuilder {
         }
 
         public void run() {
-//            int[] tmpHist = new int[numClusters];
             LireFeature f = getFeatureInstance();
             for (int i = start; i < end; i++) {
                 try {
-//                    if (!reader.isDeleted(i)) {    // TODO!
-//                    for (int j = 0; j < tmpHist.length; j++) {
-//                        tmpHist[j] = 0;
-//                    }
                     Document d = reader.document(i);
-                    IndexableField[] fields = d.getFields(localFeatureFieldName);
-                    // remove the fields if they are already there ...
-                    d.removeField(vladFieldName);
-//                    d.removeField(localFeatureHistFieldName);
-                    double[] vlad = null;
-
-                    // VLAD - Vector of Locally Aggregated Descriptors
-                    for (int j = 0; j < fields.length; j++) {
-                        f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
-                        if (vlad == null) {  // init vlad if it is null.
-                            vlad = new double[clusters.length * f.getDoubleHistogram().length];
-                            Arrays.fill(vlad, 0d);
-                        }
-                        int clusterIndex = clusterForFeature((Histogram) f);
-//                        System.out.println("clusterIndex = " + clusterIndex);
-                        double[] mean = clusters[clusterIndex].getMean();
-                        for (int k = 0; k < f.getDoubleHistogram().length; k++) {
-//                            System.out.println((clusterIndex*f.getDoubleHistogram().length+k) + " - mean: " + mean.length + " - feature: " + f.getDoubleHistogram().length);
-                            vlad[clusterIndex * f.getDoubleHistogram().length + k] += f.getDoubleHistogram()[k] - mean[k];
-                        }
-                    }
-                    normalize(vlad);
-                    GenericByteLireFeature feat = new GenericByteLireFeature();
-                    feat.setData(vlad);
-//                    System.out.println(feat.getStringRepresentation());
-                    d.add(new StoredField(vladFieldName, feat.getByteArrayRepresentation()));
-//                    d.add(new StringField(localFeatureHistFieldName, SerializationUtils.arrayToString(tmpHist), Field.Store.YES));
-
-                    // remove local features to save some space if requested:
-                    if (DELETE_LOCAL_FEATURES) {
-                        d.removeFields(localFeatureFieldName);
-                    }
+                    createVisualWords(d, f);
                     // now write the new one. we use the identifier to update ;)
                     iw.updateDocument(new Term(DocumentBuilder.FIELD_NAME_IDENTIFIER, d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]), d);
                     if (pm != null) {
@@ -523,5 +529,42 @@ public class VLADBuilder {
                 }
             }
         }
+    }
+
+    private void createVisualWords(Document d, LireFeature f)
+    {
+        IndexableField[] fields = d.getFields(localFeatureFieldName);
+        // remove the fields if they are already there ...
+        d.removeField(vladFieldName);
+        d.removeField(vladHistFieldName);
+        double[] vlad = new double[clusters.length * (clusters[0].getMean()).length];
+        Arrays.fill(vlad, 0d);
+        int clusterIndex;
+        double[] mean;
+        // VLAD - Vector of Locally Aggregated Descriptors
+        for (int j = 0; j < fields.length; j++) {
+            f.setByteArrayRepresentation(fields[j].binaryValue().bytes, fields[j].binaryValue().offset, fields[j].binaryValue().length);
+            clusterIndex = clusterForFeature((Histogram) f);
+//            System.out.println("clusterIndex = " + clusterIndex);
+            mean = clusters[clusterIndex].getMean();
+            for (int k = 0; k < f.getDoubleHistogram().length; k++) {
+//                System.out.println((clusterIndex*f.getDoubleHistogram().length+k) + " - mean: " + mean.length + " - feature: " + f.getDoubleHistogram().length);
+                vlad[clusterIndex * f.getDoubleHistogram().length + k] += f.getDoubleHistogram()[k] - mean[k];
+            }
+        }
+        normalize(vlad);
+        GenericDoubleLireFeature feat = new GenericDoubleLireFeature();
+        feat.setData(vlad);
+//        System.out.println(feat.getStringRepresentation());
+        d.add(new TextField(vladFieldName, feat.getStringRepresentation(), Field.Store.YES));
+        d.add(new StoredField(vladHistFieldName, feat.getByteArrayRepresentation()));
+
+        // remove local features to save some space if requested:
+        if (DELETE_LOCAL_FEATURES) {
+            d.removeFields(localFeatureFieldName);
+        }
+
+        // for debugging ..
+//        System.out.println(d.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0] + " " + Arrays.toString(vlad));
     }
 }

@@ -51,7 +51,7 @@ import java.awt.image.BufferedImage;
  *
  * @author Mathias Lux, mathias@juggle.at
  */
-public interface LireFeature {
+public interface LireFeature extends Histogram {
     /**
      * Gives a descriptive name of the feature, i.e. a name to show up in benchmarks, menus, UIs, etc.
      * @return the name of the feature.
@@ -113,14 +113,14 @@ public interface LireFeature {
 
     /**
      * Legacy method from a time, when feature vectors were stored as Strings in Lucene. This is not
-     * recommended, as Strings are immutable and therefore a lot of uneccessary object instances are created.
+     * recommended, as Strings are immutable and therefore a lot of unnecessary object instances are created.
      * @return the feature vector as String.
      */
     java.lang.String getStringRepresentation();
 
     /**
      * Legacy method from a time, when feature vectors were stored as Strings in Lucene. This is not
-     * recommended, as Strings are immutable and therefore a lot of uneccessary object instances are created.
+     * recommended, as Strings are immutable and therefore a lot of unnecessary object instances are created.
      * @param featureVector
      * @see net.semanticmetadata.lire.imageanalysis.LireFeature#getStringRepresentation()
      */

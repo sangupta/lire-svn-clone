@@ -56,7 +56,7 @@ import net.semanticmetadata.lire.ImageSearcherFactory;
 import net.semanticmetadata.lire.filter.LsaFilter;
 import net.semanticmetadata.lire.filter.RerankFilter;
 import net.semanticmetadata.lire.imageanalysis.*;
-import net.semanticmetadata.lire.imageanalysis.bovw.SurfFeatureHistogramBuilder;
+import net.semanticmetadata.lire.imageanalysis.bovw.BOVWBuilder;
 import net.semanticmetadata.lire.imageanalysis.joint.JointHistogram;
 import net.semanticmetadata.lire.impl.VisualWordsImageSearcher;
 import net.semanticmetadata.lire.utils.ImageUtils;
@@ -1566,7 +1566,8 @@ public class LireDemoFrame extends javax.swing.JFrame {
                     Rectangle bounds = resultsTable.getCellRect(0, 0, true);
                     resultsPane.getViewport().setViewPosition(bounds.getLocation());
                 } catch (Exception e) {
-                    JOptionPane.showMessageDialog(null, "An error occurred while searching: " + e.getMessage(), "Error while searching", JOptionPane.ERROR_MESSAGE);
+                    JOptionPane.showMessageDialog(null, "An error occurred while searching: " + e.getMessage() + "\nIf you tried to search for local features (SURF) then please \n" +
+                            "make sure you used the menu item Developer -> Bag of Visual Words -> Index All first ", "Error while searching", JOptionPane.ERROR_MESSAGE);
 
                 } finally {
                     resultsTable.setRowHeight(220);
@@ -1851,7 +1852,7 @@ public class LireDemoFrame extends javax.swing.JFrame {
         try {
             IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(textfieldIndexName.getText())));
             int samples = Math.max(1000, reader.numDocs() / 2);
-            final SurfFeatureHistogramBuilder builder = new SurfFeatureHistogramBuilder(reader, samples, 500);
+            final BOVWBuilder builder = new BOVWBuilder(reader, new SurfFeature(), samples, 500);
             builder.setProgressMonitor(new javax.swing.ProgressMonitor(this, "Progress of BoVW indexing (~)", "", 0, 100));
             Thread t = new Thread(new Runnable() {
                 public void run() {
@@ -1871,7 +1872,7 @@ public class LireDemoFrame extends javax.swing.JFrame {
     private void indexMissingActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_indexMissingActionPerformed
         try {
             IndexReader reader = DirectoryReader.open(FSDirectory.open(new File(textfieldIndexName.getText())));
-            SurfFeatureHistogramBuilder builder = new SurfFeatureHistogramBuilder(reader, reader.maxDoc() / 10, 2000);
+            BOVWBuilder builder = new BOVWBuilder(reader, new SurfFeature(), reader.maxDoc() / 10, 2000);
             builder.indexMissing();
         } catch (IOException e) {
             e.printStackTrace();
@@ -1972,7 +1973,7 @@ public class LireDemoFrame extends javax.swing.JFrame {
         } else if (selectboxDocumentBuilder.getSelectedIndex() == 10) {
             searcher = ImageSearcherFactory.createJpegCoefficientHistogramImageSearcher(numResults);
         } else if (selectboxDocumentBuilder.getSelectedIndex() == 11) {
-            searcher = new VisualWordsImageSearcher(numResults, DocumentBuilder.FIELD_NAME_SURF_VISUAL_WORDS);
+            searcher = new VisualWordsImageSearcher(numResults, DocumentBuilder.FIELD_NAME_SURF + DocumentBuilder.FIELD_NAME_BOVW);
         } else if (selectboxDocumentBuilder.getSelectedIndex() == 12) {
             searcher = ImageSearcherFactory.createJointHistogramImageSearcher(numResults);
         } else if (selectboxDocumentBuilder.getSelectedIndex() == 13) {

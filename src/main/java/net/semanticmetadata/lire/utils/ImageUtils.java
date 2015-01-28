@@ -36,14 +36,12 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 13.09.13 18:35
+ * Updated: 30.11.14 13:51
  */
 
 package net.semanticmetadata.lire.utils;
 
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.color.ColorSpace;
 import java.awt.image.BufferedImage;
 import java.awt.image.ConvolveOp;
@@ -77,8 +75,8 @@ public class ImageUtils {
             scaleFactor = ((double) maxSideLength / originalHeight);
         }
         // create new image
-        if (scaleFactor < 1) {
-            BufferedImage img = new BufferedImage((int) (originalWidth * scaleFactor), (int) (originalHeight * scaleFactor), BufferedImage.TYPE_INT_RGB);
+        if (scaleFactor < 1 && (int) Math.round(originalWidth * scaleFactor) > 1 && (int) Math.round(originalHeight * scaleFactor) > 1) {
+            BufferedImage img = new BufferedImage((int) Math.round(originalWidth * scaleFactor), (int) Math.round(originalHeight * scaleFactor), BufferedImage.TYPE_INT_RGB);
             // fast scale (Java 1.4 & 1.5)
             Graphics g = img.getGraphics();
 //        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BICUBIC);
@@ -99,22 +97,25 @@ public class ImageUtils {
      */
     public static BufferedImage scaleImage(BufferedImage image, int width, int height) {
         assert (width > 0 && height > 0);
-        // create smaller image
+        // create image of new size
         BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
         // fast scale (Java 1.4 & 1.5)
         Graphics g = img.getGraphics();
+        ((Graphics2D) g).setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR);
         g.drawImage(image, 0, 0, img.getWidth(), img.getHeight(), null);
         return img;
     }
 
     public static BufferedImage cropImage(BufferedImage image, int fromX, int fromY, int width, int height) {
         assert (width > 0 && height > 0);
+        int toX = Math.min(fromX + width, image.getWidth());
+        int toY = Math.min(fromY + height, image.getHeight());
         // create smaller image
-        BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+        BufferedImage cropped = new BufferedImage(toX-fromX, toY-fromY, BufferedImage.TYPE_INT_RGB);
         // fast scale (Java 1.4 & 1.5)
-        Graphics g = img.getGraphics();
-        g.drawImage(image, fromX, fromY, img.getWidth(), img.getHeight(), null);
-        return img;
+        Graphics g = cropped.getGraphics();
+        g.drawImage(image,0, 0, cropped.getWidth(), cropped.getHeight(), fromX, fromY, toX, toY, null);
+        return cropped;
     }
 
     /**

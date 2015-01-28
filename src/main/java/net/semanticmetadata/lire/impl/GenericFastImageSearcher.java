@@ -36,7 +36,7 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 11.07.13 11:12
+ * Updated: 18.01.15 07:31
  */
 package net.semanticmetadata.lire.impl;
 
@@ -45,6 +45,7 @@ import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.ImageDuplicates;
 import net.semanticmetadata.lire.ImageSearchHits;
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
+import net.semanticmetadata.lire.imageanalysis.sift.FloatArray;
 import net.semanticmetadata.lire.utils.ImageUtils;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.IndexReader;
@@ -68,15 +69,16 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
     protected Logger logger = Logger.getLogger(getClass().getName());
     Class<?> descriptorClass;
     String fieldName;
-    private LireFeature cachedInstance = null;
-    private boolean isCaching = false;
+    protected LireFeature cachedInstance = null;
+    protected boolean isCaching = false;
 
-    private LinkedList<byte[]> featureCache;
-    private IndexReader reader;
+    protected LinkedList<byte[]> featureCache;
+    protected IndexReader reader;
 
-    private int maxHits = 10;
+    protected int maxHits = 10;
     protected TreeSet<SimpleResult> docs;
-    private float maxDistance;
+    protected float maxDistance;
+    protected boolean useSimilarityScore = false;
 
     /**
      * Creates a new ImageSearcher for the given feature.
@@ -91,6 +93,31 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
         docs = new TreeSet<SimpleResult>();
         this.descriptorClass = descriptorClass;
         this.fieldName = fieldName;
+        try {
+            this.cachedInstance = (LireFeature) this.descriptorClass.newInstance();
+        } catch (InstantiationException e) {
+            logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
+        } catch (IllegalAccessException e) {
+            logger.log(Level.SEVERE, "Error instantiating class for generic image searcher (" + descriptorClass.getName() + "): " + e.getMessage());
+        }
+        init();
+    }
+
+    /**
+     * Creates a new ImageSearcher for the given feature.
+     *
+     * @param maxHits            the maximum number of hits
+     * @param descriptorClass    the feature class. It has to implement {@link LireFeature}
+     * @param fieldName          a custom field name for the index.
+     * @param useSimilarityScore return similarity values normalized in [0,1] instead of distance values for results.
+     * @see LireFeature
+     */
+    public GenericFastImageSearcher(int maxHits, Class<?> descriptorClass, String fieldName, boolean useSimilarityScore) {
+        this.maxHits = maxHits;
+        docs = new TreeSet<SimpleResult>();
+        this.descriptorClass = descriptorClass;
+        this.fieldName = fieldName;
+        this.useSimilarityScore = useSimilarityScore;
         try {
             this.cachedInstance = (LireFeature) this.descriptorClass.newInstance();
         } catch (InstantiationException e) {
@@ -123,7 +150,7 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
         init();
     }
 
-    private void init() {
+    protected void init() {
         // put all respective features into an in-memory cache ...
         if (isCaching && reader != null) {
             int docs = reader.numDocs();
@@ -144,11 +171,12 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
     /**
      * Creates a n ImageSearcher for the given feature. If isCaching is set to true, the features will be hold in memory,
      * which speeds up search significantly. However, this takes sometimes a lot of memory, so use it carefully.
-     * @param maxHits  the maximum number of hits
-     * @param descriptorClass  the feature class. It has to implement {@link LireFeature}
-     * @param fieldName a custom field name for the index.
-     * @param isCaching set to true if you want to search in-memory.
-     * @param reader the IndexReader used for accessing the index.
+     *
+     * @param maxHits         the maximum number of hits
+     * @param descriptorClass the feature class. It has to implement {@link LireFeature}
+     * @param fieldName       a custom field name for the index.
+     * @param isCaching       set to true if you want to search in-memory.
+     * @param reader          the IndexReader used for accessing the index.
      */
     public GenericFastImageSearcher(int maxHits, Class<?> descriptorClass, String fieldName, boolean isCaching, IndexReader reader) {
         this.isCaching = isCaching;
@@ -170,10 +198,11 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
     /**
      * Creates a n ImageSearcher for the given feature. If isCaching is set to true, the features will be hold in memory,
      * which speeds up search significantly. However, this takes sometimes a lot of memory, so use it carefully.
-     * @param maxHits   the maximum number of hits
+     *
+     * @param maxHits         the maximum number of hits
      * @param descriptorClass the feature class. It has to implement {@link LireFeature}
      * @param isCaching
-     * @param reader reader the IndexReader used for accessing the index.
+     * @param reader          reader the IndexReader used for accessing the index.
      */
     public GenericFastImageSearcher(int maxHits, Class<?> descriptorClass, boolean isCaching, IndexReader reader) {
         this.isCaching = isCaching;
@@ -207,7 +236,11 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
             logger.fine("Extraction from image finished");
 
             float maxDistance = findSimilar(reader, lireFeature);
-            searchHits = new SimpleImageSearchHits(this.docs, maxDistance);
+            if (!useSimilarityScore) {
+                searchHits = new SimpleImageSearchHits(this.docs, maxDistance);
+            } else {
+                searchHits = new SimpleImageSearchHits(this.docs, maxDistance, useSimilarityScore);
+            }
         } catch (InstantiationException e) {
             logger.log(Level.SEVERE, "Error instantiating class for generic image searcher: " + e.getMessage());
         } catch (IllegalAccessException e) {
@@ -223,7 +256,7 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
      * @throws java.io.IOException
      */
     protected float findSimilar(IndexReader reader, LireFeature lireFeature) throws IOException {
-        maxDistance = -1f;
+        maxDistance = Float.MAX_VALUE;
 //        overallMaxDistance = -1f;
 
         // clear result set ...
@@ -241,10 +274,6 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
                 d = reader.document(i);
                 tmpDistance = getDistance(d, lireFeature);
                 assert (tmpDistance >= 0);
-                // if it is the first document:
-                if (maxDistance < 0) {
-                    maxDistance = tmpDistance;
-                }
                 // if the array is not full yet:
                 if (this.docs.size() < maxHits) {
                     this.docs.add(new SimpleResult(tmpDistance, d, i));
@@ -264,31 +293,22 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
             int count = 0;
             for (Iterator<byte[]> iterator = featureCache.iterator(); iterator.hasNext(); ) {
                 cachedInstance.setByteArrayRepresentation(iterator.next());
-                if (reader.hasDeletions() && !liveDocs.get(count)) {
-                    count++;
-                    continue; // if it is deleted, just ignore it.
-                } else {
-                    tmpDistance = lireFeature.getDistance(cachedInstance);
-                    assert (tmpDistance >= 0);
-                    // if it is the first document:
-                    if (maxDistance < 0) {
-                        maxDistance = tmpDistance;
-                    }
-                    // if the array is not full yet:
-                    if (this.docs.size() < maxHits) {
-                        this.docs.add(new SimpleResult(tmpDistance, reader.document(count), count));
-                        if (tmpDistance > maxDistance) maxDistance = tmpDistance;
-                    } else if (tmpDistance < maxDistance) {
-                        // if it is nearer to the sample than at least on of the current set:
-                        // remove the last one ...
-                        this.docs.remove(this.docs.last());
-                        // add the new one ...
-                        this.docs.add(new SimpleResult(tmpDistance, reader.document(count), count));
-                        // and set our new distance border ...
-                        maxDistance = this.docs.last().getDistance();
-                    }
-                    count++;
+                tmpDistance = lireFeature.getDistance(cachedInstance);
+                assert (tmpDistance >= 0);
+                // if the array is not full yet:
+                if (this.docs.size() < maxHits) {
+                    this.docs.add(new SimpleResult(tmpDistance, reader.document(count), count));
+                    if (tmpDistance > maxDistance) maxDistance = tmpDistance;
+                } else if (tmpDistance < maxDistance) {
+                    // if it is nearer to the sample than at least on of the current set:
+                    // remove the last one ...
+                    this.docs.remove(this.docs.last());
+                    // add the new one ...
+                    this.docs.add(new SimpleResult(tmpDistance, reader.document(count), count));
+                    // and set our new distance border ...
+                    maxDistance = this.docs.last().getDistance();
                 }
+                count++;
             }
         }
         return maxDistance;
@@ -320,7 +340,11 @@ public class GenericFastImageSearcher extends AbstractImageSearcher {
                 lireFeature.setByteArrayRepresentation(doc.getField(fieldName).binaryValue().bytes, doc.getField(fieldName).binaryValue().offset, doc.getField(fieldName).binaryValue().length);
             float maxDistance = findSimilar(reader, lireFeature);
 
-            searchHits = new SimpleImageSearchHits(this.docs, maxDistance);
+            if (!useSimilarityScore) {
+                searchHits = new SimpleImageSearchHits(this.docs, maxDistance);
+            } else {
+                searchHits = new SimpleImageSearchHits(this.docs, maxDistance, useSimilarityScore);
+            }
         } catch (InstantiationException e) {
             logger.log(Level.SEVERE, "Error instantiating class for generic image searcher: " + e.getMessage());
         } catch (IllegalAccessException e) {

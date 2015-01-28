@@ -32,15 +32,18 @@
  * URL: http://www.morganclaypool.com/doi/abs/10.2200/S00468ED1V01Y201301ICR025
  *
  * Copyright statement:
- * --------------------
+ * ====================
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
- *     http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *
+ * Updated: 07.11.14 14:12
  */
 
 package net.semanticmetadata.lire.indexing;
 
 import org.apache.lucene.codecs.FilterCodec;
 import org.apache.lucene.codecs.StoredFieldsFormat;
+import org.apache.lucene.codecs.lucene410.Lucene410Codec;
 import org.apache.lucene.codecs.lucene42.Lucene42Codec;
 
 /**
@@ -55,7 +58,7 @@ import org.apache.lucene.codecs.lucene42.Lucene42Codec;
 public final class LireCustomCodec extends FilterCodec {
 
     public LireCustomCodec() {
-        super("LireCustomCodec", new Lucene42Codec());
+        super("LireCustomCodec", new Lucene410Codec());
     }
 
     @Override

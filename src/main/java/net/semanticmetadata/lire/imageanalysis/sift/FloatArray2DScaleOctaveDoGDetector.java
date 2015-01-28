@@ -74,11 +74,11 @@ package net.semanticmetadata.lire.imageanalysis.sift;
  * @version 0.1b
  */
 
-import java.util.Vector;
-
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.LUDecomposition;
 import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.Vector;
 
 
 public class FloatArray2DScaleOctaveDoGDetector {

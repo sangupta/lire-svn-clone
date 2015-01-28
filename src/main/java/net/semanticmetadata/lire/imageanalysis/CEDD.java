@@ -36,7 +36,7 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 07.08.13 12:08
+ * Updated: 16.01.15 10:26
  */
 
 package net.semanticmetadata.lire.imageanalysis;
@@ -44,6 +44,7 @@ package net.semanticmetadata.lire.imageanalysis;
 import net.semanticmetadata.lire.DocumentBuilder;
 import net.semanticmetadata.lire.imageanalysis.cedd.*;
 import net.semanticmetadata.lire.utils.ImageUtils;
+import net.semanticmetadata.lire.utils.MetricsUtils;
 import net.semanticmetadata.lire.utils.SerializationUtils;
 
 import java.awt.image.BufferedImage;
@@ -65,8 +66,9 @@ public class CEDD implements LireFeature {
     private double T2;
     private double T3;
     private boolean Compact = false;
-//    protected double[] data = new double[144];
+    //    protected double[] data = new double[144];
     protected byte[] histogram = new byte[144];
+
     int tmp;
     // for tanimoto:
     private double Result, Temp1, Temp2, TempCount1, TempCount2, TempCount3;
@@ -111,19 +113,41 @@ public class CEDD implements LireFeature {
         int[][] ImageGridRed = new int[width][height];
         int[][] ImageGridGreen = new int[width][height];
         int[][] ImageGridBlue = new int[width][height];
-        int NumberOfBlocks = 1600;
-        int Step_X = (int) Math.floor(width / Math.sqrt(NumberOfBlocks));
-        int Step_Y = (int) Math.floor(height / Math.sqrt(NumberOfBlocks));
 
-        if ((Step_X % 2) != 0) {
-            Step_X = Step_X - 1;
-        }
-        if ((Step_Y % 2) != 0) {
-            Step_Y = Step_Y - 1;
+
+
+//please double check from here
+        int NumberOfBlocks = -1;
+
+        if (Math.min(width, height) >= 80) NumberOfBlocks = 1600;
+        if (Math.min(width, height) < 80 && Math.min(width, height) >= 40) NumberOfBlocks = 400;
+        if (Math.min(width, height) < 40) NumberOfBlocks = -1;
+
+
+        int Step_X = 2;
+        int Step_Y = 2;
+
+        if (NumberOfBlocks > 0)
+        {
+            Step_X =  (int)Math.floor(width / Math.sqrt(NumberOfBlocks));
+            Step_Y = (int)Math.floor(height / Math.sqrt(NumberOfBlocks));
+
+            if ((Step_X % 2) != 0)
+            {
+                Step_X = Step_X - 1;
+            }
+            if ((Step_Y % 2) != 0)
+            {
+                Step_Y = Step_Y - 1;
+            }
+
+
         }
 
-        if (Step_Y < 2) Step_Y = 2;
-        if (Step_X < 2) Step_X = 2;
+
+
+// to here
+
 
         int[] Edges = new int[6];
 
@@ -133,15 +157,17 @@ public class CEDD implements LireFeature {
         for (int i = 0; i < 144; i++) {
             CEDD[i] = 0;
         }
-
+        int pixel;
         for (int x = 0; x < width; x++) {
             for (int y = 0; y < height; y++) {
-                int pixel = image.getRGB(x, y);
+                pixel = image.getRGB(x, y);
                 ImageGridRed[x][y] = (pixel >> 16) & 0xff;
                 ImageGridGreen[x][y] = (pixel >> 8) & 0xff;
                 ImageGridBlue[x][y] = (pixel) & 0xff;
-                int mean = (int) (0.114 * ImageGridBlue[x][y] + 0.587 * ImageGridGreen[x][y] + 0.299 * ImageGridRed[x][y]);
-                ImageGrid[x][y] = mean;
+                //int mean = (int) (0.114 * ImageGridBlue[x][y] + 0.587 * ImageGridGreen[x][y] + 0.299 * ImageGridRed[x][y]);
+//                ImageGrid[x][y] = (0.114f * ImageGridBlue[x][y] + 0.587f * ImageGridGreen[x][y] + 0.299f * ImageGridRed[x][y]);
+                ImageGrid[x][y] = (0.299f * ((pixel >> 16) & 0xff) +  0.587f * ((pixel >> 8) & 0xff) + 0.114f * ((pixel) & 0xff)  );
+
             }
         }
 
@@ -156,8 +182,26 @@ public class CEDD implements LireFeature {
 
         int MeanRed, MeanGreen, MeanBlue;
 
-        for (int y = 0; y < height - Step_Y; y += Step_Y) {
-            for (int x = 0; x < width - Step_X; x += Step_X) {
+//plase double check from here
+
+        int TempSum = 0;
+        double Max = 0;
+
+        int TemoMAX_X = Step_X * (int)Math.floor(image.getWidth() >> 1);
+        int TemoMAX_Y = Step_Y * (int)Math.floor(image.getHeight() >> 1);
+
+        if (NumberOfBlocks > 0)
+        {
+            TemoMAX_X = Step_X * (int)Math.sqrt(NumberOfBlocks);
+            TemoMAX_Y = Step_Y * (int)Math.sqrt(NumberOfBlocks);
+        }
+
+
+
+//to here
+
+        for (int y = 0; y < TemoMAX_Y; y += Step_Y) {
+            for (int x = 0; x < TemoMAX_X; x += Step_X) {
 
 
                 MeanRed = 0;
@@ -180,7 +224,7 @@ public class CEDD implements LireFeature {
                     }
                 }
 
-                int TempSum = 0;
+                TempSum = 0;
 
                 for (int i = y; i < y + Step_Y; i++) {
                     for (int j = x; j < x + Step_X; j++) {
@@ -195,16 +239,23 @@ public class CEDD implements LireFeature {
 
                         TempSum++;
 
-                        if (j < (x + Step_X / 2) && i < (y + Step_Y / 2))
-                            PixelsNeighborhood.Area1 += 4 * ImageGrid[j][i] / (Step_X * Step_Y);
-                        if (j >= (x + Step_X / 2) && i < (y + Step_Y / 2))
-                            PixelsNeighborhood.Area2 += 4 * ImageGrid[j][i] / (Step_X * Step_Y);
-                        if (j < (x + Step_X / 2) && i >= (y + Step_Y / 2))
-                            PixelsNeighborhood.Area3 += 4 * ImageGrid[j][i] / (Step_X * Step_Y);
-                        if (j >= (x + Step_X / 2) && i >= (y + Step_Y / 2))
-                            PixelsNeighborhood.Area4 += 4 * ImageGrid[j][i] / (Step_X * Step_Y);
+                        if (j < (x + Step_X / 2) && i < (y + Step_Y / 2)) PixelsNeighborhood.Area1 += (ImageGrid[j][i]);
+                        if (j >= (x + Step_X / 2) && i < (y + Step_Y / 2)) PixelsNeighborhood.Area2 += (ImageGrid[j][i]);
+                        if (j < (x + Step_X / 2) && i >= (y + Step_Y / 2)) PixelsNeighborhood.Area3 += (ImageGrid[j][i]);
+                        if (j >= (x + Step_X / 2) && i >= (y + Step_Y / 2)) PixelsNeighborhood.Area4 += (ImageGrid[j][i]);
+
                     }
                 }
+
+                PixelsNeighborhood.Area1 = (int)(PixelsNeighborhood.Area1 * (4.0 / (Step_X * Step_Y)));
+
+                PixelsNeighborhood.Area2 = (int)(PixelsNeighborhood.Area2 * (4.0 / (Step_X * Step_Y)));
+
+                PixelsNeighborhood.Area3 = (int)(PixelsNeighborhood.Area3 * (4.0 / (Step_X * Step_Y)));
+
+                PixelsNeighborhood.Area4 = (int)(PixelsNeighborhood.Area4 * (4.0 / (Step_X * Step_Y)));
+
+
 
                 MaskValues.Mask1 = Math.abs(PixelsNeighborhood.Area1 * 2 + PixelsNeighborhood.Area2 * -2 + PixelsNeighborhood.Area3 * -2 + PixelsNeighborhood.Area4 * 2);
                 MaskValues.Mask2 = Math.abs(PixelsNeighborhood.Area1 * 1 + PixelsNeighborhood.Area2 * 1 + PixelsNeighborhood.Area3 * -1 + PixelsNeighborhood.Area4 * -1);
@@ -212,7 +263,8 @@ public class CEDD implements LireFeature {
                 MaskValues.Mask4 = Math.abs(PixelsNeighborhood.Area1 * Math.sqrt(2) + PixelsNeighborhood.Area2 * 0 + PixelsNeighborhood.Area3 * 0 + PixelsNeighborhood.Area4 * -Math.sqrt(2));
                 MaskValues.Mask5 = Math.abs(PixelsNeighborhood.Area1 * 0 + PixelsNeighborhood.Area2 * Math.sqrt(2) + PixelsNeighborhood.Area3 * -Math.sqrt(2) + PixelsNeighborhood.Area4 * 0);
 
-                double Max = Math.max(MaskValues.Mask1, Math.max(MaskValues.Mask2, Math.max(MaskValues.Mask3, Math.max(MaskValues.Mask4, MaskValues.Mask5))));
+                Max = Math.max(MaskValues.Mask1, Math.max(MaskValues.Mask2, Math.max(MaskValues.Mask3, Math.max(MaskValues.Mask4, MaskValues.Mask5))));
+
 
                 MaskValues.Mask1 = MaskValues.Mask1 / Max;
                 MaskValues.Mask2 = MaskValues.Mask2 / Max;
@@ -311,7 +363,6 @@ public class CEDD implements LireFeature {
 //        data = qCEDD;  // changed by mlux
         for (int i = 0; i < qCEDD.length; i++) {
             histogram[i] = (byte) qCEDD[i];
-
         }
     }
 
@@ -358,12 +409,16 @@ public class CEDD implements LireFeature {
     }
 
     @SuppressWarnings("unused")
-	private double scalarMult(double[] a, double[] b) {
+    private double scalarMult(double[] a, double[] b) {
         double sum = 0.0;
         for (int i = 0; i < a.length; i++) {
             sum += a[i] * b[i];
         }
         return sum;
+    }
+
+    public byte[] getByteHistogram() {
+        return histogram;
     }
 
     public String getStringRepresentation() { // added by mlux
@@ -427,16 +482,12 @@ public class CEDD implements LireFeature {
      * @see net.semanticmetadata.lire.imageanalysis.CEDD#getByteArrayRepresentation
      */
     public void setByteArrayRepresentation(byte[] in) {
-        if ((in.length << 1) < histogram.length) Arrays.fill(histogram, in.length << 1, histogram.length - 1, (byte) 0);
-        for (int i = 0; i < in.length; i++) {
-            tmp = in[i] + 128;
-            histogram[(i << 1) + 1] = ((byte) (tmp & 0x000F));
-            histogram[i << 1] = ((byte) (tmp >> 4));
-        }
+        setByteArrayRepresentation(in, 0, in.length);
     }
 
     public void setByteArrayRepresentation(byte[] in, int offset, int length) {
-        if ((length << 1) < histogram.length) Arrays.fill(histogram, length << 1, histogram.length - 1, (byte) 0);
+        if ((length << 1) < histogram.length)
+            Arrays.fill(histogram, length << 1, histogram.length, (byte) 0);
         for (int i = offset; i < offset + length; i++) {
             tmp = in[i] + 128;
             histogram[((i - offset) << 1) + 1] = ((byte) (tmp & 0x000F));

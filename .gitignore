@@ -46,3 +46,6 @@ out.png
 results-*/*
 textindextest/*
 wang-index-*/*
+
+# Ignore newer libraries that are commited into the repo for we use Maven
+lib/*

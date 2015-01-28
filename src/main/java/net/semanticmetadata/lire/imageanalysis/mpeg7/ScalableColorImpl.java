@@ -32,13 +32,16 @@
  * URL: http://www.morganclaypool.com/doi/abs/10.2200/S00468ED1V01Y201301ICR025
  *
  * Copyright statement:
- * --------------------
+ * ====================
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
- *     http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
+ *
+ * Updated: 29.11.14 10:23
  */
 package net.semanticmetadata.lire.imageanalysis.mpeg7;
 
 import net.semanticmetadata.lire.imageanalysis.LireFeature;
+import net.semanticmetadata.lire.utils.SerializationUtils;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.WritableRaster;
@@ -52,6 +55,7 @@ import java.util.logging.Logger;
  */
 public class ScalableColorImpl {
     protected Logger logger = Logger.getLogger(getClass().getName());
+    double[] descriptor;
 
     protected BufferedImage img;
     protected int NumberOfCoefficients = 256;
@@ -209,7 +213,7 @@ public class ScalableColorImpl {
     public ScalableColorImpl(BufferedImage image) {
         this.img = image;
         this.NumberOfBitplanesDiscarded = 0;
-        this.NumberOfCoefficients = 64;
+        this.NumberOfCoefficients = 256;
         _xSize = img.getWidth();
         _ySize = img.getHeight();
         init();
@@ -219,7 +223,7 @@ public class ScalableColorImpl {
     public void extract(BufferedImage image) {
         this.img = image;
         this.NumberOfBitplanesDiscarded = 0;
-        this.NumberOfCoefficients = 64;
+        this.NumberOfCoefficients = 256;
         _xSize = img.getWidth();
         _ySize = img.getHeight();
         init();
@@ -239,7 +243,7 @@ public class ScalableColorImpl {
     public ScalableColorImpl(int[] pixels) {
         this.img = null;
         this.NumberOfBitplanesDiscarded = 0;
-        this.NumberOfCoefficients = 64;
+        this.NumberOfCoefficients = 256;
         _xSize = 1;
         _ySize = pixels.length / 3;
         this.pixels = pixels;
@@ -260,7 +264,7 @@ public class ScalableColorImpl {
         _h_value = 16;
         _s_value = 4;
         _v_value = 4;
-
+        descriptor = new double[NumberOfCoefficients];
     }
 
     protected void extract() {
@@ -333,6 +337,7 @@ public class ScalableColorImpl {
         }
         QuantizeHistogram(tmpHist, sumPixels);
         haarTransformedHistogram = HaarTransform(tmpHist);
+        descriptor = SerializationUtils.toDoubleArray(haarTransformedHistogram);
     }
 
     private int[] createHsvImageBuffer(int imageColSize) {
@@ -342,8 +347,12 @@ public class ScalableColorImpl {
             //convertRgbToHsv
             int[] hsv = new int[3];
             WritableRaster raster = img.getRaster();
-            int[] pixel = new int[3];
-
+            int[] pixel;     // fix from Patti Spala Nov-27-2014
+            if (raster.getNumBands() > 3) {
+                pixel = new int[raster.getNumBands()];
+            } else {
+                pixel = new int[3];
+            }
             for (int i = 0; i < imageColSize; i += 3) {
                 raster.getPixel((i / 3) % _xSize, (i / 3) / _xSize, pixel);
                 convertRgbToHsv(pixel[0], pixel[1], pixel[2], hsv);
@@ -379,6 +388,8 @@ public class ScalableColorImpl {
             }
             QuantizeHistogram(tmpHist, sumPixels);
             haarTransformedHistogram = HaarTransform(tmpHist);
+            descriptor = SerializationUtils.toDoubleArray(haarTransformedHistogram);
+
         }
     }
 
@@ -816,5 +827,6 @@ public class ScalableColorImpl {
             count++;
         }
         haarTransformedHistogram = hist;
+        this.descriptor = SerializationUtils.toDoubleArray(haarTransformedHistogram);
     }
 }

@@ -36,7 +36,7 @@
  * (c) 2002-2013 by Mathias Lux (mathias@juggle.at)
  *  http://www.semanticmetadata.net/lire, http://www.lire-project.net
  *
- * Updated: 13.09.13 18:35
+ * Updated: 07.11.14 14:16
  */
 
 package net.semanticmetadata.lire;
@@ -50,14 +50,21 @@ import net.semanticmetadata.lire.impl.ChainedDocumentBuilder;
 import net.semanticmetadata.lire.impl.GenericDocumentBuilder;
 import net.semanticmetadata.lire.impl.GenericFastImageSearcher;
 import net.semanticmetadata.lire.utils.FileUtils;
-import net.semanticmetadata.lire.utils.ImageUtils;
 import net.semanticmetadata.lire.utils.LuceneUtils;
+import net.semanticmetadata.lire.utils.SerializationUtils;
 import org.apache.lucene.document.Document;
+import org.apache.lucene.document.StoredField;
 import org.apache.lucene.index.DirectoryReader;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.IndexWriter;
+import org.apache.lucene.index.Term;
+import org.apache.lucene.search.IndexSearcher;
+import org.apache.lucene.search.ScoreDoc;
+import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.TopDocs;
 import org.apache.lucene.store.FSDirectory;
 import org.apache.lucene.store.MMapDirectory;
+import org.apache.lucene.util.BytesRef;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -163,6 +170,8 @@ public class GeneralTest extends TestCase {
             IndexWriter iw = LuceneUtils.createIndexWriter(indexPath + "-small", true);
             for (String identifier : testFiles) {
                 Document doc = b.createDocument(new FileInputStream(testFilesPath + identifier), identifier);
+                doc.add(new StoredField("video_file", "surgery1.mp4"));
+                doc.add(new StoredField("timestamp", "25"));
                 iw.addDocument(doc);
             }
             iw.close();
@@ -177,6 +186,7 @@ public class GeneralTest extends TestCase {
                     if (y == 0) {
                         // check if the first result is the query:
                         assertEquals(result.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0].equals(query.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0]), true);
+                        System.out.println(result.getValues("video_file")[0]);
                     } else {
                         // check if they are ordered by distance:
                         assertEquals(hits.score(y) < hits.score(y - 1), true);
@@ -186,12 +196,31 @@ public class GeneralTest extends TestCase {
         }
     }
 
+    public void testReadIndex() throws IOException {
+        IndexReader reader = DirectoryReader.open(FSDirectory.open(new File("ucid-index-39997508")));
+        for (int k = 0; k < reader.maxDoc(); k++) {
+            Document document = reader.document(k);
+            BytesRef b = document.getField("featureCEDDLoDe_Hist").binaryValue();
+            double[] doubles = SerializationUtils.toDoubleArray(b.bytes, b.offset, b.length);
+            if (document.getValues(DocumentBuilder.FIELD_NAME_IDENTIFIER)[0].endsWith("00008.png"))
+                System.out.println(Arrays.toString(doubles));
+        }
+
+        // check lucene tuorials and docs
+        IndexSearcher is = new IndexSearcher(reader);
+        TopDocs td = is.search(new TermQuery(new Term(DocumentBuilder.FIELD_NAME_IDENTIFIER, "")), 10);
+        for (int i = 0; i < td.scoreDocs.length; i++) {
+            ScoreDoc scoreDoc = td.scoreDocs[i];
+            Document document = reader.document(scoreDoc.doc);
+        }
+    }
+
     public void testIndexLarge() throws IOException {
 //        ArrayList<String> images = FileUtils.getAllImages(new File("C:\\Temp\\testImagelogos"), true);
-        ArrayList<String> images = FileUtils.getAllImages(new File("C:\\Java\\Projects\\LireSVN\\testdata\\flickr-10000"), false);
+        ArrayList<String> images = FileUtils.getAllImages(new File("testdata/UCID"), false);
         IndexWriter iw = LuceneUtils.createIndexWriter("index-large", true, LuceneUtils.AnalyzerType.WhitespaceAnalyzer);
         // select one feature for the large index:
-        int featureIndex = 13;
+        int featureIndex = 0;
         int count = 0;
         long ms = System.currentTimeMillis();
         DocumentBuilder builder = new ChainedDocumentBuilder();
@@ -267,7 +296,7 @@ public class GeneralTest extends TestCase {
 //            queryDocID = 877 * (i + 1);
             IndexReader reader = DirectoryReader.open(FSDirectory.open(new File("index-large")));
             // select one feature for the large index:
-            int featureIndex = 13;
+            int featureIndex = 0;
             int count = 0;
             long ms = System.currentTimeMillis();
             ImageSearchHits hits = searchers[featureIndex].search(reader.document(queryDocID), reader);
