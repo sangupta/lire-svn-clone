@@ -25,3 +25,22 @@ Sznajder.
 
 - Mathias Lux, Klagenfurt, 2008-06-08
   http://www.SemanticMetadata.net
+  
+  
+Difference in this FORK
+-----------------------
+
+This fork is a little different from the original codebase
+found at Google Code. The changes include:
+
+* Complete Mavenization of the project
+* Type parameterization to make calls strongly-typed
+* Minor performance optimizations by caching computations that have already been done
+* Latest Maven-based dependencies
+* Remove unused imports
+* Minor code cleanup
+
+This fork is maintained by Sandeep Gupta (http://sangupta.com) in
+the GitHub repo at https://github.com/sangupta/lire.
+
+For questions, feel free to reach me at my email address: sandy.pec@gmail.com
